@@ -13,6 +13,7 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 )
 
+// MakeAccessControl sets Header for access control
 func MakeAccessControl(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -27,6 +28,7 @@ func MakeAccessControl(h http.Handler) http.Handler {
 	})
 }
 
+// MakeLivenessHandler returns liveness handler
 func MakeLivenessHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
@@ -34,6 +36,7 @@ func MakeLivenessHandler() http.Handler {
 	})
 }
 
+// MakeReadinessHandler return readiness handler
 func MakeReadinessHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)

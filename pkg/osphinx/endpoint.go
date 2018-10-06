@@ -22,7 +22,7 @@ func (r loginResponse) error() error { return r.Err }
 func makeLoginEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(loginRequest)
-		b0, err := s.Login(req.R, req.Q)
+		b0, err := s.ExpK(req.R, req.Q)
 		return loginResponse{B0: b0, Err: err}, nil
 	}
 }

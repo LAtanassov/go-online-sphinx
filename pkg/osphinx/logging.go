@@ -27,5 +27,5 @@ func (s *LoggingService) Login(r, q *big.Int) (b0 *big.Int, err error) {
 			"err", err,
 		)
 	}(time.Now())
-	return s.Service.Login(r, q)
+	return s.Service.ExpK(r, q)
 }

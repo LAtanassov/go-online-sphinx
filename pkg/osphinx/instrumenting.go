@@ -31,5 +31,5 @@ func (s *InstrumentingService) Login(r, q *big.Int) (b0 *big.Int, err error) {
 		s.requestLatency.With("method", "login").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return s.Service.Login(r, q)
+	return s.Service.ExpK(r, q)
 }

@@ -54,6 +54,11 @@ func fordKaliskiPasswordToRandom(h hash.Hash, bits int) *big.Int {
 		log.Fatal(err)
 	}
 
+	d, err := rand.Int(rand.Reader, q)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	kinv := big.NewInt(0).ModInverse(k, q)
 	if kinv == nil {
 		kinv = big.NewInt(0)
@@ -63,8 +68,12 @@ func fordKaliskiPasswordToRandom(h hash.Hash, bits int) *big.Int {
 
 	// blinding
 	b := ExpInGroup(g, k, q)
+
+	// exp with secret
+	bd := ExpInGroup(b, d, q)
+
 	// unblinding
-	r := ExpInGroup(b, kinv, q)
+	r := ExpInGroup(bd, kinv, q)
 	return r
 }
 

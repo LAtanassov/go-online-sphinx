@@ -10,7 +10,7 @@ var ErrInvalidArgument = errors.New("invalid arguments")
 
 // Service represents the interface provided to other layers.
 type Service interface {
-	Login(r, q *big.Int) (*big.Int, error)
+	ExpK(r, q *big.Int) (*big.Int, error)
 }
 
 // OnlineSphinx provides all operations needed.
@@ -27,8 +27,8 @@ func NewService(k, Q0 *big.Int) *OnlineSphinx {
 	}
 }
 
-// Login operations
-func (o *OnlineSphinx) Login(r, q *big.Int) (*big.Int, error) {
+// ExpK returns r**k mod |2q + 1|
+func (o *OnlineSphinx) ExpK(r, q *big.Int) (*big.Int, error) {
 	// TODO: check preconditions, r should be not 1, q should be prime
 	return ExpInGroup(r, o.k, q), nil
 }
