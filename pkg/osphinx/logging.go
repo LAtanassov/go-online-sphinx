@@ -18,11 +18,11 @@ func NewLoggingService(logger log.Logger, s Service) *LoggingService {
 	return &LoggingService{logger, s}
 }
 
-// Login wraps service.Login and writes log msg
-func (s *LoggingService) Login(r, q *big.Int) (b0 *big.Int, err error) {
+// ExpK wraps service.ExpK and writes log msg
+func (s *LoggingService) ExpK(r, q *big.Int) (b0 *big.Int, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
-			"method", "login",
+			"method", "ExpK",
 			"took", time.Since(begin),
 			"err", err,
 		)

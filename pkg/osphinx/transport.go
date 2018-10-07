@@ -44,8 +44,8 @@ func MakeReadinessHandler() http.Handler {
 	})
 }
 
-// MakeHandler returns a handler for the handling service.
-func MakeLoginHandler(s Service, logger kitlog.Logger) http.Handler {
+// MakeExpKHandler returns a handler for the handling service.
+func MakeExpKHandler(s Service, logger kitlog.Logger) http.Handler {
 	r := mux.NewRouter()
 
 	opts := []kithttp.ServerOption{
@@ -53,19 +53,19 @@ func MakeLoginHandler(s Service, logger kitlog.Logger) http.Handler {
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
-	loginHandler := kithttp.NewServer(
-		makeLoginEndpoint(s),
-		decodeLoginRequest,
+	expKHandler := kithttp.NewServer(
+		makeExpKEndpoint(s),
+		decodeExpKRequest,
 		encodeResponse,
 		opts...,
 	)
 
-	r.Handle("/v1/login", loginHandler).Methods("POST")
+	r.Handle("/v1/login/expk", expKHandler).Methods("POST")
 
 	return r
 }
 
-func decodeLoginRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
 		R string `json:"r"`
 		Q string `json:"q"`
@@ -85,7 +85,7 @@ func decodeLoginRequest(_ context.Context, r *http.Request) (interface{}, error)
 		return nil, err
 	}
 
-	return loginRequest{
+	return expKRequest{
 		R: big.NewInt(0).SetBytes(rHex),
 		Q: big.NewInt(0).SetBytes(qHex),
 	}, nil

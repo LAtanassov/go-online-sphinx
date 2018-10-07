@@ -49,7 +49,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/v1/login", osphinx.MakeLoginHandler(svc, httpLogger))
+	mux.Handle("/v1/login/expk", osphinx.MakeExpKHandler(svc, httpLogger))
 
 	http.Handle("/", osphinx.MakeAccessControl(mux))
 	http.Handle("/metrics", promhttp.Handler())

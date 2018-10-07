@@ -23,12 +23,12 @@ func NewInstrumentingService(counter metrics.Counter, latency metrics.Histogram,
 	}
 }
 
-// Login wraps service.Login and instruments it.
-func (s *InstrumentingService) Login(r, q *big.Int) (b0 *big.Int, err error) {
+// ExpK wraps service.ExpK and instruments it.
+func (s *InstrumentingService) ExpK(r, q *big.Int) (b0 *big.Int, err error) {
 
 	defer func(begin time.Time) {
-		s.requestCount.With("method", "login").Add(1)
-		s.requestLatency.With("method", "login").Observe(time.Since(begin).Seconds())
+		s.requestCount.With("method", "ExpK").Add(1)
+		s.requestLatency.With("method", "ExpK").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
 	return s.Service.ExpK(r, q)

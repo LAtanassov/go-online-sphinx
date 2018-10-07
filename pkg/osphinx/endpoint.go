@@ -7,22 +7,22 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
-type loginRequest struct {
+type expKRequest struct {
 	R *big.Int
 	Q *big.Int
 }
 
-type loginResponse struct {
+type expKResponse struct {
 	B0  *big.Int
 	Err error `json:"error,omitempty"`
 }
 
-func (r loginResponse) error() error { return r.Err }
+func (r expKResponse) error() error { return r.Err }
 
-func makeLoginEndpoint(s Service) endpoint.Endpoint {
+func makeExpKEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(loginRequest)
+		req := request.(expKRequest)
 		b0, err := s.ExpK(req.R, req.Q)
-		return loginResponse{B0: b0, Err: err}, nil
+		return expKResponse{B0: b0, Err: err}, nil
 	}
 }
