@@ -23,13 +23,24 @@ func NewInstrumentingService(counter metrics.Counter, latency metrics.Histogram,
 	}
 }
 
+// Register wraps service.Register and instruments it.
+func (s *InstrumentingService) Register(id string) (err error) {
+
+	defer func(begin time.Time) {
+		s.requestCount.With("method", "Register").Add(1)
+		s.requestLatency.With("method", "Register").Observe(time.Since(begin).Seconds())
+	}(time.Now())
+
+	return s.Service.Register(id)
+}
+
 // ExpK wraps service.ExpK and instruments it.
-func (s *InstrumentingService) ExpK(r, q *big.Int) (b0 *big.Int, err error) {
+func (s *InstrumentingService) ExpK(uID string, r, q *big.Int) (sID string, sNonce, bd, q0, kv *big.Int, err error) {
 
 	defer func(begin time.Time) {
 		s.requestCount.With("method", "ExpK").Add(1)
 		s.requestLatency.With("method", "ExpK").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return s.Service.ExpK(r, q)
+	return s.Service.ExpK(uID, r, q)
 }

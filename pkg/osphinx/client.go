@@ -11,7 +11,7 @@ import (
 
 // LoginConfig contains login configuration
 type LoginConfig struct {
-	C      *big.Int
+	cID    *big.Int
 	pwd    string
 	server []string
 	h      func() hash.Hash
@@ -22,15 +22,15 @@ type LoginConfig struct {
 // Login implements Online SPHINX login protocol
 func Login(config LoginConfig) ([]byte, *Metadata, error) {
 
-	CNonce, err := rand.Int(rand.Reader, config.q)
+	cNonce, err := rand.Int(rand.Reader, config.q)
 
 	b, kinv := blind(config.pwd, config.q, config.h)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	c := &client{}
-	S, bd, SNonce, Q0, kv, err := c.ExpK(b, config.q, CNonce)
+	c := &Client{}
+	sID, sNonce, bd, Q0, kv, err := c.ExpK(config.cID, cNonce, b, config.q)
 
 	B0 := unblind(bd, kinv, config.q)
 
@@ -39,14 +39,14 @@ func Login(config LoginConfig) ([]byte, *Metadata, error) {
 		return nil, nil, err
 	}
 
-	SKi := hmacBigInt(config.h, kv, []*big.Int{config.C, S, CNonce, SNonce})
+	SKi := hmacBigInt(config.h, kv, []*big.Int{config.cID, sID, cNonce, sNonce})
 
 	err = c.Verify(SKi)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	MACski := hmacBigInt(config.h, SKi, []*big.Int{config.C, S, big.NewInt(1)})
+	MACski := hmacBigInt(config.h, SKi, []*big.Int{config.cID, sID, big.NewInt(1)})
 	meta, err := c.GetMetadata(MACski)
 	if err != nil {
 		return nil, nil, err
@@ -93,25 +93,42 @@ func unblind(bd, kinv, q *big.Int) (B0 *big.Int) {
 type metadatarequest struct {
 }
 
-type client struct {
+// Client represent Online Sphinx Client
+type Client struct {
+}
+
+// NewClient returns a Online SPHINX client
+func NewClient() *Client {
+	return &Client{}
+}
+
+// Login an user
+func (c *Client) Login() error {
+	return nil
+}
+
+// Register a new user
+func (c *Client) Register() error {
+	return nil
 }
 
 // ExpK runs on server
-func (c *client) ExpK(b, q, CNonce *big.Int) (S, bd, SNonce, Q0, kv *big.Int, err error) {
-	S = big.NewInt(0)
+func (c *Client) ExpK(cID, cNonce, b, q *big.Int) (sID, sNonce, bd, Q0, kv *big.Int, err error) {
+	sID = big.NewInt(0)
 	d, err := rand.Int(rand.Reader, q)
 	if err != nil {
 		return
 	}
 
 	bd = ExpInGroup(b, d, q)
-	SNonce = big.NewInt(0)
+	sNonce = big.NewInt(0)
 	Q0 = big.NewInt(0)
 	kv = big.NewInt(0)
 	return
 }
 
-func (c *client) Verify(SKi *big.Int) error {
+// Verify session key SKi
+func (c *Client) Verify(SKi *big.Int) error {
 	return nil
 }
 
@@ -120,6 +137,6 @@ type Metadata struct {
 }
 
 // GetMetadata request metadata
-func (c *client) GetMetadata(MACski *big.Int) (*Metadata, error) {
+func (c *Client) GetMetadata(MACski *big.Int) (*Metadata, error) {
 	return &Metadata{}, nil
 }

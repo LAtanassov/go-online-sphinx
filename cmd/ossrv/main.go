@@ -27,8 +27,11 @@ func main() {
 
 	fieldKeys := []string{"method"}
 
+	var repo osphinx.Repository
+	repo = osphinx.NewInMemoryRepository()
+
 	var svc osphinx.Service
-	svc = osphinx.NewService(big.NewInt(0), big.NewInt(0))
+	svc = osphinx.NewService("sID", big.NewInt(0), big.NewInt(0), repo)
 	svc = osphinx.NewLoggingService(logger, svc)
 	svc = osphinx.NewInstrumentingService(
 		kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
@@ -49,6 +52,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	mux.Handle("/v1/register", osphinx.MakeRegisterHandler(svc, httpLogger))
 	mux.Handle("/v1/login/expk", osphinx.MakeExpKHandler(svc, httpLogger))
 
 	http.Handle("/", osphinx.MakeAccessControl(mux))

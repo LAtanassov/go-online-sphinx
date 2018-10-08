@@ -13,6 +13,48 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 )
 
+// MakeRegisterHandler returns a handler
+func MakeRegisterHandler(s Service, logger kitlog.Logger) http.Handler {
+	r := mux.NewRouter()
+
+	opts := []kithttp.ServerOption{
+		kithttp.ServerErrorLogger(logger),
+		kithttp.ServerErrorEncoder(encodeError),
+	}
+
+	registerHandler := kithttp.NewServer(
+		makeRegisterEndpoint(s),
+		decodeRegisterRequest,
+		encodeResponse,
+		opts...,
+	)
+
+	r.Handle("/v1/register", registerHandler).Methods("POST")
+
+	return r
+}
+
+// MakeExpKHandler returns a handler for the handling service.
+func MakeExpKHandler(s Service, logger kitlog.Logger) http.Handler {
+	r := mux.NewRouter()
+
+	opts := []kithttp.ServerOption{
+		kithttp.ServerErrorLogger(logger),
+		kithttp.ServerErrorEncoder(encodeError),
+	}
+
+	expKHandler := kithttp.NewServer(
+		makeExpKEndpoint(s),
+		decodeExpKRequest,
+		encodeResponse,
+		opts...,
+	)
+
+	r.Handle("/v1/login/expk", expKHandler).Methods("POST")
+
+	return r
+}
+
 // MakeAccessControl sets Header for access control
 func MakeAccessControl(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -44,31 +86,25 @@ func MakeReadinessHandler() http.Handler {
 	})
 }
 
-// MakeExpKHandler returns a handler for the handling service.
-func MakeExpKHandler(s Service, logger kitlog.Logger) http.Handler {
-	r := mux.NewRouter()
-
-	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorLogger(logger),
-		kithttp.ServerErrorEncoder(encodeError),
+func decodeRegisterRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var body struct {
+		UID string `json:"uid"`
 	}
 
-	expKHandler := kithttp.NewServer(
-		makeExpKEndpoint(s),
-		decodeExpKRequest,
-		encodeResponse,
-		opts...,
-	)
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return nil, err
+	}
 
-	r.Handle("/v1/login/expk", expKHandler).Methods("POST")
-
-	return r
+	return registerRequest{
+		uID: body.UID,
+	}, nil
 }
 
 func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
-		R string `json:"r"`
-		Q string `json:"q"`
+		UID string `json:"uid"`
+		R   string `json:"r"`
+		Q   string `json:"q"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -86,8 +122,9 @@ func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) 
 	}
 
 	return expKRequest{
-		R: big.NewInt(0).SetBytes(rHex),
-		Q: big.NewInt(0).SetBytes(qHex),
+		uID: body.UID,
+		r:   big.NewInt(0).SetBytes(rHex),
+		q:   big.NewInt(0).SetBytes(qHex),
 	}, nil
 }
 
