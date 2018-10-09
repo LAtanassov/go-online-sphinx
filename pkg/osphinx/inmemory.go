@@ -45,7 +45,7 @@ func (r *InMemoryRepository) Get(id string) (User, error) {
 	defer r.mutex.Unlock()
 
 	u, ok := r.users[id]
-	if ok {
+	if !ok {
 		return User{}, ErrUserNotFound
 	}
 	return u, nil
