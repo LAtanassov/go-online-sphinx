@@ -1,4 +1,4 @@
-package osphinx
+package server
 
 import (
 	"math/big"

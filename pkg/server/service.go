@@ -1,9 +1,11 @@
-package osphinx
+package server
 
 import (
 	"crypto/rand"
 	"errors"
 	"math/big"
+
+	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 )
 
 // ErrInvalidArgument is returned when an invalid argument was passed.
@@ -58,7 +60,7 @@ func (o *OnlineSphinx) Register(id string) error {
 func (o *OnlineSphinx) ExpK(uID string, r, q *big.Int) (sID string, sNonce, bd, q0, kv *big.Int, err error) {
 	sID = o.sID
 	q0 = o.q0
-	bd = ExpInGroup(r, o.k, q)
+	bd = crypto.ExpInGroup(r, o.k, q)
 
 	sNonce, err = rand.Int(rand.Reader, q)
 	if err != nil {

@@ -1,4 +1,4 @@
-package osphinx
+package crypto
 
 import (
 	"math/big"

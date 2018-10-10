@@ -1,13 +1,25 @@
-package osphinx
+package client
 
 import (
 	"crypto/hmac"
 	"crypto/rand"
+	"errors"
 	"hash"
+	"io"
 	"math/big"
+	"net/http"
+	"net/url"
+
+	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 
 	"golang.org/x/crypto/openpgp/elgamal"
 )
+
+// ErrUserNotCreated in repostory
+var ErrUserNotCreated = errors.New("user not created")
+
+var one = big.NewInt(1)
+var two = big.NewInt(2)
 
 // LoginConfig contains login configuration
 type LoginConfig struct {
@@ -68,7 +80,7 @@ func hmacBigInt(h func() hash.Hash, key *big.Int, data []*big.Int) (m *big.Int) 
 // runs on client
 func blind(pwd string, q *big.Int, h func() hash.Hash) (b, kinv *big.Int) {
 	p := big.NewInt(0).SetBytes(h().Sum([]byte(pwd)))
-	g := ExpInGroup(p, two, q)
+	g := crypto.ExpInGroup(p, two, q)
 
 	k, err := rand.Int(rand.Reader, q)
 	if err != nil {
@@ -81,12 +93,12 @@ func blind(pwd string, q *big.Int, h func() hash.Hash) (b, kinv *big.Int) {
 	}
 
 	// blinding
-	b = ExpInGroup(g, k, q)
+	b = crypto.ExpInGroup(g, k, q)
 	return
 }
 
 func unblind(bd, kinv, q *big.Int) (B0 *big.Int) {
-	B0 = ExpInGroup(bd, kinv, q)
+	B0 = crypto.ExpInGroup(bd, kinv, q)
 	return
 }
 
@@ -95,20 +107,35 @@ type metadatarequest struct {
 
 // Client represent Online Sphinx Client
 type Client struct {
+	p Poster
 }
 
-// NewClient returns a Online SPHINX client
-func NewClient() *Client {
-	return &Client{}
+// New returns a Online SPHINX client
+func New(p Poster, c Configuration) *Client {
+	return &Client{p: p}
+}
+
+// Poster represents an interface to do POST requests
+type Poster interface {
+	Post(url, contentType string, body io.Reader) (resp *http.Response, err error)
+}
+
+// Configuration of an Online SPHINX client.
+type Configuration struct {
+	cID    string
+	server *url.URL
+	hash   func() hash.Hash
+	q      *big.Int
+	k      *big.Int
 }
 
 // Login an user
-func (c *Client) Login() error {
+func (c *Client) Login(username, password string) error {
 	return nil
 }
 
 // Register a new user
-func (c *Client) Register() error {
+func (c *Client) Register(username string) error {
 	return nil
 }
 
@@ -120,7 +147,7 @@ func (c *Client) ExpK(cID, cNonce, b, q *big.Int) (sID, sNonce, bd, Q0, kv *big.
 		return
 	}
 
-	bd = ExpInGroup(b, d, q)
+	bd = crypto.ExpInGroup(b, d, q)
 	sNonce = big.NewInt(0)
 	Q0 = big.NewInt(0)
 	kv = big.NewInt(0)

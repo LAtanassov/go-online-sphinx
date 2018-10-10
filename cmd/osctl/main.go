@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"net/http"
 	"os"
+
+	"github.com/LAtanassov/go-online-sphinx/pkg/client"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -104,9 +107,9 @@ func initRun(cmd *cobra.Command, args []string) {
 }
 
 func registerRun(cmd *cobra.Command, args []string) {
-	fmt.Println("register called")
+	client.New(&http.Client{}, client.Configuration{}).Register("username")
 }
 
 func loginRun(cmd *cobra.Command, args []string) {
-	fmt.Println("login called")
+	client.New(&http.Client{}, client.Configuration{}).Login("username", "password")
 }
