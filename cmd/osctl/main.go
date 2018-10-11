@@ -107,7 +107,7 @@ func initRun(cmd *cobra.Command, args []string) {
 }
 
 func registerRun(cmd *cobra.Command, args []string) {
-	client.New(&http.Client{}, client.Configuration{}).Register("username")
+	client.New(&http.Client{}, client.Configuration{}).Register("username", "password")
 }
 
 func loginRun(cmd *cobra.Command, args []string) {

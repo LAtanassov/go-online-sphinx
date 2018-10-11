@@ -3,27 +3,28 @@
 package client
 
 import (
+	"net/http"
 	"testing"
 )
 
 func TestClient_Register(t *testing.T) {
 
 	t.Run("should register a new user ID", func(t *testing.T) {
-		err := New().Register("new-user", "password")
+		err := New(&http.Client{}, Configuration{baseURL: "http://localhost:8080", registerPath: "/v1/register"}).Register("new-user", "password")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
 	})
 
 	t.Run("should be able to register an existing user ID", func(t *testing.T) {
-		err := New().Register("another-new-user", "password")
+		err := New(&http.Client{}, Configuration{baseURL: "http://localhost:8080", registerPath: "/v1/register"}).Register("another-new-user", "password")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
 
-		err := New().Register("another-new-user", "password")
+		err = New(&http.Client{}, Configuration{baseURL: "http://localhost:8080", registerPath: "/v1/register"}).Register("another-new-user", "password")
 		if err == ErrUserNotCreated {
-			t.Errorf("Register() error = %v wantErr", err, ErrUserNotCreated)
+			t.Errorf("Register() error = %v wantErr = %v", err, ErrUserNotCreated)
 		}
 	})
 
@@ -31,8 +32,8 @@ func TestClient_Register(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 
-	c := New()
-	c.Register("user", "password")
+	c := New(&http.Client{}, Configuration{baseURL: "http://localhost:8080", registerPath: "/v1/register"})
+	err := c.Register("user", "password")
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
