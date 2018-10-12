@@ -3,6 +3,8 @@
 package client
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
 	"net/http"
 	"testing"
 )
@@ -32,8 +34,19 @@ func TestClient_Register(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 
-	c := New(&http.Client{}, Configuration{baseURL: "http://localhost:8080", registerPath: "/v1/register"})
-	err := c.Register("user", "password")
+	q, err := rand.Prime(rand.Reader, 8)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c := New(&http.Client{}, Configuration{
+		baseURL:      "http://localhost:8080",
+		registerPath: "/v1/register",
+		q:            q,
+		hash:         sha256.New,
+	})
+
+	err = c.Register("user", "password")
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}

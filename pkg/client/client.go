@@ -64,10 +64,10 @@ func (c *Client) Login(username, password string) error {
 	}
 
 	jsonReq, err := json.Marshal(&expKRequest{
-		cID:    c.config.cID,
-		cNonce: cNonce.Text(16),
-		b:      b.Text(16),
-		q:      c.config.q.Text(16),
+		username: username,
+		cNonce:   cNonce.Text(16),
+		b:        b.Text(16),
+		q:        c.config.q.Text(16),
 	})
 	if err != nil {
 		return err
@@ -84,7 +84,6 @@ func (c *Client) Login(username, password string) error {
 	if err != nil {
 		return err
 	}
-
 	defer resp.Body.Close()
 
 	jsonResp := expKResponse{}
@@ -180,17 +179,17 @@ func (c *Client) GetMetadata(MACski *big.Int) (*Metadata, error) {
 }
 
 type expKRequest struct {
-	cID    string
-	cNonce string
-	b      string
-	q      string
+	username string
+	cNonce   string
+	b        string
+	q        string
 }
 
 type expKResponse struct {
 	sID    string
 	sNonce string
 	bd     string
-	Q0     string
+	q0     string
 	kv     string
 }
 

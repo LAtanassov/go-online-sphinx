@@ -8,9 +8,10 @@ import (
 )
 
 type expKRequest struct {
-	uID string
-	r   *big.Int
-	q   *big.Int
+	username string
+	cNonce   *big.Int
+	b        *big.Int
+	q        *big.Int
 }
 
 type expKResponse struct {
@@ -19,7 +20,7 @@ type expKResponse struct {
 	bd     *big.Int
 	q0     *big.Int
 	kv     *big.Int
-	Err    error `json:"error,omitempty"`
+	Err    error
 }
 
 func (r expKResponse) error() error { return r.Err }
@@ -27,13 +28,14 @@ func (r expKResponse) error() error { return r.Err }
 func makeExpKEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(expKRequest)
-		sID, sNonce, bd, q0, kv, err := s.ExpK(req.uID, req.r, req.q)
+
+		sID, sNonce, bd, q0, kv, err := s.ExpK(req.username, req.b, req.q)
 		return expKResponse{sID: sID, sNonce: sNonce, bd: bd, q0: q0, kv: kv, Err: err}, nil
 	}
 }
 
 type registerRequest struct {
-	uID string
+	username string
 }
 
 type registerResponse struct {
@@ -43,7 +45,7 @@ type registerResponse struct {
 func makeRegisterEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(registerRequest)
-		err := s.Register(req.uID)
+		err := s.Register(req.username)
 		return registerResponse{Err: err}, nil
 	}
 }

@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"math/big"
 	"net/http"
 
@@ -12,6 +12,9 @@ import (
 	kitlog "github.com/go-kit/kit/log"
 	kithttp "github.com/go-kit/kit/transport/http"
 )
+
+// ErrUnexpextedType is returned after a type cast failed.
+var ErrUnexpectedType = errors.New("unexpected type")
 
 // MakeRegisterHandler returns a handler
 func MakeRegisterHandler(s Service, logger kitlog.Logger) http.Handler {
@@ -46,7 +49,7 @@ func MakeExpKHandler(s Service, logger kitlog.Logger) http.Handler {
 	expKHandler := kithttp.NewServer(
 		makeExpKEndpoint(s),
 		decodeExpKRequest,
-		encodeResponse,
+		encodeExpKResponse,
 		opts...,
 	)
 
@@ -88,7 +91,7 @@ func MakeReadinessHandler() http.Handler {
 
 func decodeRegisterRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
-		UID string `json:"uid"`
+		Username string `json:"username"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -96,35 +99,36 @@ func decodeRegisterRequest(_ context.Context, r *http.Request) (interface{}, err
 	}
 
 	return registerRequest{
-		uID: body.UID,
+		username: body.Username,
 	}, nil
 }
 
 func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
-		UID string `json:"uid"`
-		R   string `json:"r"`
-		Q   string `json:"q"`
+		Username string `json:"username"`
+		CNonce   string `json:cNonce`
+		B        string `json:"b"`
+		Q        string `json:"q"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, err
 	}
 
-	rHex, err := hex.DecodeString(body.R)
-	if err != nil {
-		return nil, err
-	}
+	cNonce := new(big.Int)
+	cNonce.SetString(body.CNonce, 16)
 
-	qHex, err := hex.DecodeString(body.Q)
-	if err != nil {
-		return nil, err
-	}
+	b := new(big.Int)
+	b.SetString(body.B, 16)
+
+	q := new(big.Int)
+	q.SetString(body.Q, 16)
 
 	return expKRequest{
-		uID: body.UID,
-		r:   big.NewInt(0).SetBytes(rHex),
-		q:   big.NewInt(0).SetBytes(qHex),
+		username: body.Username,
+		cNonce:   cNonce,
+		b:        b,
+		q:        q,
 	}, nil
 }
 
@@ -135,6 +139,38 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)
+}
+
+func encodeExpKResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	if e, ok := response.(errorer); ok && e.error() != nil {
+		encodeError(ctx, e.error(), w)
+		return nil
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	r, ok := response.(expKResponse)
+	if !ok {
+		encodeError(ctx, ErrUnexpectedType, w)
+		return nil
+	}
+
+	rjson := struct {
+		sID    string
+		sNonce string
+		bd     string
+		q0     string
+		kv     string
+		Err    error `json:"error,omitempty"`
+	}{
+		r.sID,
+		r.sNonce.Text(16),
+		r.bd.Text(16),
+		r.q0.Text(16),
+		r.kv.Text(16),
+		r.Err,
+	}
+
+	return json.NewEncoder(w).Encode(rjson)
 }
 
 type errorer interface {

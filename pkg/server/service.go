@@ -14,7 +14,7 @@ var ErrInvalidArgument = errors.New("invalid arguments")
 // Service represents the interface provided to other layers.
 type Service interface {
 	Register(id string) error
-	ExpK(uID string, r, q *big.Int) (sID string, sNonce, bd, q0, kv *big.Int, err error)
+	ExpK(uID string, b, q *big.Int) (sID string, sNonce, bd, q0, kv *big.Int, err error)
 }
 
 // Repository represents a store for user management - need to be implemented
@@ -25,8 +25,8 @@ type Repository interface {
 
 // User is an entity and contains all user related informated
 type User struct {
-	id string
-	kv *big.Int
+	username string
+	kv       *big.Int
 }
 
 // OnlineSphinx provides all operations needed.
@@ -52,15 +52,15 @@ func NewService(sID string, k, q0 *big.Int, repo Repository) *OnlineSphinx {
 }
 
 // Register an user with its id
-func (o *OnlineSphinx) Register(id string) error {
-	return o.repo.Add(User{id: id, kv: big.NewInt(0)})
+func (o *OnlineSphinx) Register(username string) error {
+	return o.repo.Add(User{username: username, kv: big.NewInt(0)})
 }
 
 // ExpK returns r**k mod |2q + 1|
-func (o *OnlineSphinx) ExpK(uID string, r, q *big.Int) (sID string, sNonce, bd, q0, kv *big.Int, err error) {
+func (o *OnlineSphinx) ExpK(uID string, b, q *big.Int) (sID string, sNonce, bd, q0, kv *big.Int, err error) {
 	sID = o.sID
 	q0 = o.q0
-	bd = crypto.ExpInGroup(r, o.k, q)
+	bd = crypto.ExpInGroup(b, o.k, q)
 
 	sNonce, err = rand.Int(rand.Reader, q)
 	if err != nil {

@@ -30,21 +30,21 @@ func (r *InMemoryRepository) Add(u User) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	_, ok := r.users[u.id]
+	_, ok := r.users[u.username]
 	if ok {
 		return ErrUserAlreadyExists
 	}
 
-	r.users[u.id] = u
+	r.users[u.username] = u
 	return nil
 }
 
 // Get an existing user
-func (r *InMemoryRepository) Get(id string) (User, error) {
+func (r *InMemoryRepository) Get(username string) (User, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	u, ok := r.users[id]
+	u, ok := r.users[username]
 	if !ok {
 		return User{}, ErrUserNotFound
 	}
