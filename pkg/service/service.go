@@ -1,4 +1,4 @@
-package server
+package service
 
 import (
 	"crypto/rand"
@@ -39,8 +39,8 @@ type OnlineSphinx struct {
 	repo Repository
 }
 
-// NewService returns an Online SPHINX service - to share - pointer.
-func NewService(sID string, k, q0 *big.Int, repo Repository) *OnlineSphinx {
+// New returns an Online SPHINX service - to share - pointer.
+func New(sID string, k, q0 *big.Int, repo Repository) *OnlineSphinx {
 	return &OnlineSphinx{
 		sID: sID,
 

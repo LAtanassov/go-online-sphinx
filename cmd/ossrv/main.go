@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/LAtanassov/go-online-sphinx/pkg/server"
+	"github.com/LAtanassov/go-online-sphinx/pkg/service"
 
 	"github.com/go-kit/kit/log"
 	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
@@ -28,13 +28,13 @@ func main() {
 
 	fieldKeys := []string{"method"}
 
-	var repo server.Repository
-	repo = server.NewInMemoryRepository()
+	var repo service.Repository
+	repo = service.NewInMemoryRepository()
 
-	var svc server.Service
-	svc = server.NewService("sID", big.NewInt(0), big.NewInt(0), repo)
-	svc = server.NewLoggingService(logger, svc)
-	svc = server.NewInstrumentingService(
+	var svc service.Service
+	svc = service.New("sID", big.NewInt(0), big.NewInt(0), repo)
+	svc = service.NewLoggingService(logger, svc)
+	svc = service.NewInstrumentingService(
 		kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
 			Namespace: "api",
 			Subsystem: "online_sphinx_service",
@@ -53,13 +53,13 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/v1/register", server.MakeRegisterHandler(svc, httpLogger))
-	mux.Handle("/v1/login/expk", server.MakeExpKHandler(svc, httpLogger))
+	mux.Handle("/v1/register", service.MakeRegisterHandler(svc, httpLogger))
+	mux.Handle("/v1/login/expk", service.MakeExpKHandler(svc, httpLogger))
 
-	http.Handle("/", server.MakeAccessControl(mux))
+	http.Handle("/", service.MakeAccessControl(mux))
 	http.Handle("/metrics", promhttp.Handler())
-	http.Handle("/_status/liveness", server.MakeLivenessHandler())
-	http.Handle("/_status/readiness", server.MakeReadinessHandler())
+	http.Handle("/_status/liveness", service.MakeLivenessHandler())
+	http.Handle("/_status/readiness", service.MakeReadinessHandler())
 
 	errs := make(chan error, 2)
 	go func() {
