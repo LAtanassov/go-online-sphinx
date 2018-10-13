@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"flag"
 	"fmt"
 	"math/big"
@@ -31,8 +32,24 @@ func main() {
 	var repo service.Repository
 	repo = service.NewInMemoryRepository()
 
+	bits := big.NewInt(8)
+	max := new(big.Int)
+	max.Exp(big.NewInt(2), bits, nil)
+
+	k, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		logger.Log(err)
+		os.Exit(1)
+	}
+
+	q0, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		logger.Log(err)
+		os.Exit(1)
+	}
+
 	var svc service.Service
-	svc = service.New("sID", big.NewInt(0), big.NewInt(0), repo)
+	svc = service.New("sID", k, q0, bits, repo)
 	svc = service.NewLoggingService(logger, svc)
 	svc = service.NewInstrumentingService(
 		kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{

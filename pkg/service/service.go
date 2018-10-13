@@ -36,24 +36,34 @@ type OnlineSphinx struct {
 	k  *big.Int
 	q0 *big.Int
 
+	bits *big.Int
 	repo Repository
 }
 
 // New returns an Online SPHINX service - to share - pointer.
-func New(sID string, k, q0 *big.Int, repo Repository) *OnlineSphinx {
+func New(sID string, k, q0, bits *big.Int, repo Repository) *OnlineSphinx {
 	return &OnlineSphinx{
 		sID: sID,
 
 		k:  k,
 		q0: q0,
 
+		bits: bits,
 		repo: repo,
 	}
 }
 
 // Register an user with its id
 func (o *OnlineSphinx) Register(username string) error {
-	return o.repo.Add(User{username: username, kv: big.NewInt(0)})
+	max := new(big.Int)
+	max.Exp(big.NewInt(2), o.bits, nil)
+
+	kv, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		return err
+	}
+
+	return o.repo.Add(User{username: username, kv: kv})
 }
 
 // ExpK returns r**k mod |2q + 1|
@@ -62,7 +72,10 @@ func (o *OnlineSphinx) ExpK(uID string, b, q *big.Int) (sID string, sNonce, bd, 
 	q0 = o.q0
 	bd = crypto.ExpInGroup(b, o.k, q)
 
-	sNonce, err = rand.Int(rand.Reader, q)
+	max := new(big.Int)
+	max.Exp(big.NewInt(2), o.bits, nil)
+
+	sNonce, err = rand.Int(rand.Reader, max)
 	if err != nil {
 		return
 	}

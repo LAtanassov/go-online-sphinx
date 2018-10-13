@@ -24,6 +24,9 @@ func (s *LoggingService) Register(username string) (err error) {
 		s.logger.Log(
 			"method", "Register",
 			"took", time.Since(begin),
+
+			"username", username,
+
 			"err", err,
 		)
 	}(time.Now())
@@ -32,14 +35,25 @@ func (s *LoggingService) Register(username string) (err error) {
 }
 
 // ExpK wraps service.ExpK and writes log msg
-func (s *LoggingService) ExpK(username string, r, q *big.Int) (sID string, sNonce, bd, q0, kv *big.Int, err error) {
+func (s *LoggingService) ExpK(username string, b, q *big.Int) (sID string, sNonce, bd, q0, kv *big.Int, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "ExpK",
 			"took", time.Since(begin),
+
+			"username", username,
+			"b", b.Text(16),
+			"q", q.Text(16),
+
+			"sID", sID,
+			"sNonce", sNonce.Text(16),
+			"bd", bd.Text(16),
+			"q0", q0.Text(16),
+			"kv", kv.Text(16),
+
 			"err", err,
 		)
 	}(time.Now())
 
-	return s.Service.ExpK(username, r, q)
+	return s.Service.ExpK(username, b, q)
 }
