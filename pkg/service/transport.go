@@ -13,7 +13,7 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 )
 
-// ErrUnexpextedType is returned after a type cast failed.
+// ErrUnexpectedType is returned after a type cast failed.
 var ErrUnexpectedType = errors.New("unexpected type")
 
 // MakeRegisterHandler returns a handler
@@ -106,7 +106,7 @@ func decodeRegisterRequest(_ context.Context, r *http.Request) (interface{}, err
 func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
 		Username string `json:"username"`
-		CNonce   string `json:cNonce`
+		CNonce   string `json:"cNonce"`
 		B        string `json:"b"`
 		Q        string `json:"q"`
 	}
