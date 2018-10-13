@@ -154,13 +154,13 @@ func encodeExpKResponse(ctx context.Context, w http.ResponseWriter, response int
 		return nil
 	}
 
-	rjson := struct {
-		sID    string
-		sNonce string
-		bd     string
-		q0     string
-		kv     string
-		Err    error `json:"error,omitempty"`
+	body := struct {
+		SID    string `json:"sID"`
+		SNonce string `json:"sNonce"`
+		BD     string `json:"bd"`
+		Q0     string `json:"q0"`
+		KV     string `json:"kv"`
+		Err    error  `json:"error,omitempty"`
 	}{
 		r.sID,
 		r.sNonce.Text(16),
@@ -170,7 +170,7 @@ func encodeExpKResponse(ctx context.Context, w http.ResponseWriter, response int
 		r.Err,
 	}
 
-	return json.NewEncoder(w).Encode(rjson)
+	return json.NewEncoder(w).Encode(body)
 }
 
 type errorer interface {

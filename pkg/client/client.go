@@ -73,10 +73,10 @@ func (c *Client) Login(username, password string) error {
 	}
 
 	jsonReq, err := json.Marshal(&expKRequest{
-		username: username,
-		cNonce:   cNonce.Text(16),
-		b:        b.Text(16),
-		q:        c.config.q.Text(16),
+		Username: username,
+		CNonce:   cNonce.Text(16),
+		B:        b.Text(16),
+		Q:        c.config.q.Text(16),
 	})
 	if err != nil {
 		return err
@@ -102,12 +102,12 @@ func (c *Client) Login(username, password string) error {
 	}
 
 	bd := new(big.Int)
-	bd.SetString(jsonResp.bd, 16)
+	bd.SetString(jsonResp.BD, 16)
 
 	B0 := unblind(bd, kinv, c.config.q)
 
 	Q0 := new(big.Int)
-	Q0.SetString(jsonResp.q0, 16)
+	Q0.SetString(jsonResp.Q0, 16)
 
 	_, err = elgamal.Decrypt(c.config.k, B0, Q0)
 	if err != nil {
@@ -115,16 +115,16 @@ func (c *Client) Login(username, password string) error {
 	}
 
 	kv := new(big.Int)
-	kv.SetString(jsonResp.kv, 16)
+	kv.SetString(jsonResp.KV, 16)
 
 	cID := new(big.Int)
 	cID.SetString(c.config.cID, 16)
 
 	sID := new(big.Int)
-	sID.SetString(jsonResp.sID, 16)
+	sID.SetString(jsonResp.SID, 16)
 
 	sNonce := new(big.Int)
-	sNonce.SetString(jsonResp.sNonce, 16)
+	sNonce.SetString(jsonResp.SNonce, 16)
 
 	SKi := hmacBigInt(c.config.hash, kv, []*big.Int{cID, sID, cNonce, sNonce})
 
@@ -146,7 +146,7 @@ func (c *Client) Login(username, password string) error {
 // $> curl -d '{"username":"username"}' -H "Content-Type: application/json" -X POST http://localhost:8080/v1/register
 func (c *Client) Register(username, password string) error {
 
-	b, err := json.Marshal(&registerRequest{username: username})
+	b, err := json.Marshal(&registerRequest{Username: username})
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func (c *Client) Register(username, password string) error {
 }
 
 type registerRequest struct {
-	username string
+	Username string `json:"username"`
 }
 
 // Logout an logged in user
@@ -189,19 +189,19 @@ func (c *Client) GetMetadata(MACski *big.Int) (*Metadata, error) {
 }
 
 type expKRequest struct {
-	username string
-	cNonce   string
-	b        string
-	q        string
+	Username string `json:"username"`
+	CNonce   string `json:"cNonce"`
+	B        string `json:"b"`
+	Q        string `json:"q"`
 }
 
 type expKResponse struct {
-	sID    string
-	sNonce string
-	bd     string
-	q0     string
-	kv     string
-	Err    error
+	SID    string `json:"sID"`
+	SNonce string `json:"sNonce"`
+	BD     string `json:"bd"`
+	Q0     string `json:"Q0"`
+	KV     string `json:"kv"`
+	Err    error  `json:"error"`
 }
 
 type metadataRequest struct {
