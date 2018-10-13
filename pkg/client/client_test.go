@@ -3,47 +3,88 @@
 package client
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"math/big"
 	"net/http"
+	"os"
 	"testing"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	docker "github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
+	"golang.org/x/crypto/openpgp/elgamal"
 )
 
 func TestClient_Register(t *testing.T) {
 
+	baseURL := before(t)
+
 	t.Run("should register a new user ID", func(t *testing.T) {
-		err := New(&http.Client{}, Configuration{baseURL: "http://localhost:8080", registerPath: "/v1/register"}).Register("new-user", "password")
+		err := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}).Register("new-user", "password")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
 	})
 
 	t.Run("should be able to register an existing user ID", func(t *testing.T) {
-		err := New(&http.Client{}, Configuration{baseURL: "http://localhost:8080", registerPath: "/v1/register"}).Register("another-new-user", "password")
+		err := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}).Register("another-new-user", "password")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
 
-		err = New(&http.Client{}, Configuration{baseURL: "http://localhost:8080", registerPath: "/v1/register"}).Register("another-new-user", "password")
+		err = New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}).Register("another-new-user", "password")
 		if err == ErrUserNotCreated {
 			t.Errorf("Register() error = %v wantErr = %v", err, ErrUserNotCreated)
 		}
 	})
 
+	after(t)
 }
 
 func TestLogin(t *testing.T) {
 
-	q, err := rand.Prime(rand.Reader, 8)
+	//baseURL := before(t)
+	baseURL := "http://localhost:8080"
+	bits := 8
+
+	q, err := rand.Prime(rand.Reader, bits)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	g, err := rand.Int(rand.Reader, q)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	x, err := rand.Int(rand.Reader, q)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	k := &elgamal.PrivateKey{
+		PublicKey: elgamal.PublicKey{
+			G: g,
+			P: q,
+		},
+		X: x,
+	}
+
+	k.Y = new(big.Int).Exp(k.G, k.X, k.P)
+
 	c := New(&http.Client{}, Configuration{
-		baseURL:      "http://localhost:8080",
+		q:    q,
+		k:    k,
+		hash: sha256.New,
+
+		bits: big.NewInt(int64(bits)),
+
+		baseURL:      baseURL,
 		registerPath: "/v1/register",
-		q:            q,
-		hash:         sha256.New,
+		expkPath:     "/v1/login/expk",
 	})
 
 	err = c.Register("user", "password")
@@ -74,4 +115,66 @@ func TestLogin(t *testing.T) {
 		}
 		c.Logout()
 	})
+
+	after(t)
+}
+
+func before(t *testing.T) string {
+	ctx := context.Background()
+	cli, err := docker.NewEnvClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	imageName := "latanassov/ossrv:0.1.0"
+
+	_, err = cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config := &container.Config{
+		Image: imageName,
+		ExposedPorts: nat.PortSet{
+			"8080/tcp": struct{}{},
+		},
+	}
+
+	hostConfig := &container.HostConfig{
+		PortBindings: nat.PortMap{
+			"8080/tcp": []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: "9090",
+				},
+			},
+		},
+	}
+
+	resp, err := cli.ContainerCreate(ctx, config, hostConfig, nil, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		t.Fatal(err)
+	}
+
+	os.Setenv("OSSRV_DOCKER_ID", resp.ID)
+
+	return "http://localhost:9090"
+}
+
+func after(t *testing.T) {
+	ctx := context.Background()
+	cli, err := docker.NewEnvClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	containerID := os.Getenv("OSSRV_DOCKER_ID")
+
+	if err := cli.ContainerStop(ctx, containerID, nil); err != nil {
+		t.Fatal(err)
+	}
 }

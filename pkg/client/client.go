@@ -42,6 +42,7 @@ type Configuration struct {
 	q    *big.Int
 	k    *elgamal.PrivateKey
 
+	bits         *big.Int
 	contentType  string
 	baseURL      string
 	registerPath string
@@ -54,11 +55,19 @@ func New(p Poster, c Configuration) *Client {
 }
 
 // Login an user
+// $> curl -d '{"username":"hans"}' -H "Content-Type: application/json" -X POST http://localhost:8080/v1/register
+// $> curl -d '{"username":"hans", "cNonce": "43", "b": "17b", "q": "d3"}' -H "Content-Type: application/json" -X POST http://localhost:8080/v1/login/expk
 func (c *Client) Login(username, password string) error {
 
-	cNonce, err := rand.Int(rand.Reader, c.config.q)
+	max := new(big.Int)
+	max.Exp(two, c.config.bits, nil)
 
-	b, kinv := blind(password, c.config.q, c.config.hash)
+	cNonce, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		return err
+	}
+
+	b, kinv := blind(password, c.config.q, max, c.config.hash)
 	if err != nil {
 		return err
 	}
@@ -98,7 +107,7 @@ func (c *Client) Login(username, password string) error {
 	B0 := unblind(bd, kinv, c.config.q)
 
 	Q0 := new(big.Int)
-	Q0.SetString(jsonResp.bd, 16)
+	Q0.SetString(jsonResp.q0, 16)
 
 	_, err = elgamal.Decrypt(c.config.k, B0, Q0)
 	if err != nil {
@@ -134,6 +143,7 @@ func (c *Client) Login(username, password string) error {
 }
 
 // Register a new user
+// $> curl -d '{"username":"username"}' -H "Content-Type: application/json" -X POST http://localhost:8080/v1/register
 func (c *Client) Register(username, password string) error {
 
 	b, err := json.Marshal(&registerRequest{username: username})
@@ -191,6 +201,7 @@ type expKResponse struct {
 	bd     string
 	q0     string
 	kv     string
+	Err    error
 }
 
 type metadataRequest struct {
@@ -209,11 +220,13 @@ func hmacBigInt(h func() hash.Hash, key *big.Int, data []*big.Int) (m *big.Int) 
 	return
 }
 
-func blind(pwd string, q *big.Int, h func() hash.Hash) (b, kinv *big.Int) {
-	p := big.NewInt(0).SetBytes(h().Sum([]byte(pwd)))
+func blind(pwd string, q, max *big.Int, h func() hash.Hash) (b, kinv *big.Int) {
+	p := new(big.Int)
+	p.SetBytes(h().Sum([]byte(pwd)))
+
 	g := crypto.ExpInGroup(p, two, q)
 
-	k, err := rand.Int(rand.Reader, q)
+	k, err := rand.Int(rand.Reader, max)
 	if err != nil {
 		return
 	}
