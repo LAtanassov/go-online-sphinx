@@ -53,6 +53,7 @@ func main() {
 
 	mux.Handle("/v1/register", service.MakeRegisterHandler(svc, httpLogger))
 	mux.Handle("/v1/login/expk", service.MakeExpKHandler(svc, httpLogger))
+	mux.Handle("/v1/login/verify", service.MakeVerifyHandler(svc, httpLogger))
 
 	http.Handle("/", service.MakeAccessControl(mux))
 	http.Handle("/_status/liveness", service.MakeLivenessHandler())

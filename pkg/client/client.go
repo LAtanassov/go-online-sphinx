@@ -122,6 +122,7 @@ func (c *Client) Login(username, password string) error {
 	bd := new(big.Int)
 	bd.SetString(jsonResp.BD, 16)
 
+	// unblinding
 	B0 := crypto.ExpInGroup(bd, kinv, c.config.q)
 
 	Q0 := new(big.Int)
@@ -150,7 +151,7 @@ func (c *Client) Login(username, password string) error {
 	SKi := new(big.Int)
 	SKi.SetBytes(mac.Sum(nil))
 
-	return nil
+	return c.verify(SKi)
 }
 
 // Register a new user
@@ -192,14 +193,6 @@ func (c *Client) verify(SKi *big.Int) error {
 		return err
 	}
 
-	mac := hmac.New(c.config.hash, SKi.Bytes())
-	for _, d := range []*big.Int{vNonce} {
-		mac.Write(d.Bytes())
-	}
-
-	v := new(big.Int)
-	v.SetBytes(mac.Sum(nil))
-
 	jsonReq, err := json.Marshal(&verifyRequest{
 		VNonce: vNonce.Text(16),
 	})
@@ -230,7 +223,8 @@ func (c *Client) verify(SKi *big.Int) error {
 	w := new(big.Int)
 	w.SetString(jsonResp.WNonce, 16)
 
-	if v.Add(one, nil).Cmp(w) != 0 {
+	wc := new(big.Int)
+	if wc.Add(one, vNonce).Cmp(w) != 0 {
 		return ErrAuthenticationFailed
 	}
 

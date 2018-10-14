@@ -58,6 +58,27 @@ func MakeExpKHandler(s Service, logger kitlog.Logger) http.Handler {
 	return r
 }
 
+// MakeVerifyHandler returns a handler for the handling service.
+func MakeVerifyHandler(s Service, logger kitlog.Logger) http.Handler {
+	r := mux.NewRouter()
+
+	opts := []kithttp.ServerOption{
+		kithttp.ServerErrorLogger(logger),
+		kithttp.ServerErrorEncoder(encodeError),
+	}
+
+	verifyHandler := kithttp.NewServer(
+		makeVerifyEndpoint(s),
+		decodeVerifyRequest,
+		encodeVerifyResponse,
+		opts...,
+	)
+
+	r.Handle("/v1/login/verify", verifyHandler).Methods("POST")
+
+	return r
+}
+
 // MakeAccessControl sets Header for access control
 func MakeAccessControl(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -103,6 +124,56 @@ func decodeRegisterRequest(_ context.Context, r *http.Request) (interface{}, err
 	}, nil
 }
 
+func decodeVerifyRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var body struct {
+		VNonce string `json:"vNonce"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+
+	v := new(big.Int)
+	v.SetString(body.VNonce, 16)
+
+	return verifyRequest{
+		v: v,
+	}, nil
+}
+
+func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	if e, ok := response.(errorer); ok && e.error() != nil {
+		encodeError(ctx, e.error(), w)
+		return nil
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	return json.NewEncoder(w).Encode(response)
+}
+
+func encodeVerifyResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	if e, ok := response.(errorer); ok && e.error() != nil {
+		encodeError(ctx, e.error(), w)
+		return nil
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	r, ok := response.(verifyResponse)
+	if !ok {
+		encodeError(ctx, ErrUnexpectedType, w)
+		return nil
+	}
+
+	body := struct {
+		WNonce string `json:"wNonce"`
+		Err    error  `json:"error,omitempty"`
+	}{
+		r.w.Text(16),
+		r.Err,
+	}
+
+	return json.NewEncoder(w).Encode(body)
+}
+
 func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
 		Username string `json:"username"`
@@ -130,15 +201,6 @@ func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) 
 		b:        b,
 		q:        q,
 	}, nil
-}
-
-func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if e, ok := response.(errorer); ok && e.error() != nil {
-		encodeError(ctx, e.error(), w)
-		return nil
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	return json.NewEncoder(w).Encode(response)
 }
 
 func encodeExpKResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {

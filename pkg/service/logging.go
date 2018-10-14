@@ -57,3 +57,17 @@ func (s *LoggingService) ExpK(username string, b, q *big.Int) (sID string, sNonc
 
 	return s.Service.ExpK(username, b, q)
 }
+
+// Verify wraps service.Verify and writes log msg
+func (s *LoggingService) Verify(v *big.Int) (w *big.Int, err error) {
+	defer func(begin time.Time) {
+		s.logger.Log(
+			"method", "Verify",
+			"took", time.Since(begin),
+
+			"err", err,
+		)
+	}(time.Now())
+
+	return s.Service.Verify(v)
+}

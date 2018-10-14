@@ -73,6 +73,7 @@ func TestLogin(t *testing.T) {
 		baseURL:      baseURL,
 		registerPath: "/v1/register",
 		expkPath:     "/v1/login/expk",
+		verifyPath:   "/v1/login/verify",
 	})
 
 	err = c.Register("user", "password")

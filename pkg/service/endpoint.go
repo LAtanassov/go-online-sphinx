@@ -49,3 +49,20 @@ func makeRegisterEndpoint(s Service) endpoint.Endpoint {
 		return registerResponse{Err: err}, nil
 	}
 }
+
+type verifyRequest struct {
+	v *big.Int
+}
+
+type verifyResponse struct {
+	w   *big.Int
+	Err error `json:"error,omitempty"`
+}
+
+func makeVerifyEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(verifyRequest)
+		w, err := s.Verify(req.v)
+		return verifyResponse{w: w, Err: err}, nil
+	}
+}

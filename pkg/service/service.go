@@ -11,10 +11,14 @@ import (
 // ErrInvalidArgument is returned when an invalid argument was passed.
 var ErrInvalidArgument = errors.New("invalid arguments")
 
+var one = big.NewInt(1)
+var two = big.NewInt(2)
+
 // Service represents the interface provided to other layers.
 type Service interface {
 	Register(id string) error
 	ExpK(uID string, b, q *big.Int) (sID string, sNonce, bd, q0, kv *big.Int, err error)
+	Verify(v *big.Int) (w *big.Int, err error)
 }
 
 // Repository represents a store for user management - need to be implemented
@@ -56,7 +60,7 @@ func New(sID string, k, q0, bits *big.Int, repo Repository) *OnlineSphinx {
 // Register an user with its id
 func (o *OnlineSphinx) Register(username string) error {
 	max := new(big.Int)
-	max.Exp(big.NewInt(2), o.bits, nil)
+	max.Exp(two, o.bits, nil)
 
 	kv, err := rand.Int(rand.Reader, max)
 	if err != nil {
@@ -73,7 +77,7 @@ func (o *OnlineSphinx) ExpK(uID string, b, q *big.Int) (sID string, sNonce, bd, 
 	bd = crypto.ExpInGroup(b, o.k, q)
 
 	max := new(big.Int)
-	max.Exp(big.NewInt(2), o.bits, nil)
+	max.Exp(two, o.bits, nil)
 
 	sNonce, err = rand.Int(rand.Reader, max)
 	if err != nil {
@@ -87,4 +91,10 @@ func (o *OnlineSphinx) ExpK(uID string, b, q *big.Int) (sID string, sNonce, bd, 
 	kv = u.kv
 
 	return
+}
+
+// Verify decrypts the vNonce, increments it and encrypts it again.
+func (o *OnlineSphinx) Verify(v *big.Int) (w *big.Int, err error) {
+	w = new(big.Int)
+	return w.Add(v, one), nil
 }
