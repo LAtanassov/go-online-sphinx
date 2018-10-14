@@ -13,9 +13,6 @@ import (
 	"github.com/LAtanassov/go-online-sphinx/pkg/service"
 
 	"github.com/go-kit/kit/log"
-	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
-	stdprometheus "github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -26,8 +23,6 @@ func main() {
 	var logger log.Logger
 	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
-
-	fieldKeys := []string{"method"}
 
 	var repo service.Repository
 	repo = service.NewInMemoryRepository()
@@ -51,20 +46,6 @@ func main() {
 	var svc service.Service
 	svc = service.New("sID", k, q0, bits, repo)
 	svc = service.NewLoggingService(logger, svc)
-	svc = service.NewInstrumentingService(
-		kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
-			Namespace: "api",
-			Subsystem: "online_sphinx_service",
-			Name:      "request_count",
-			Help:      "Number of requests received.",
-		}, fieldKeys),
-		kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
-			Namespace: "api",
-			Subsystem: "online_sphinx_service",
-			Name:      "request_latency_microseconds",
-			Help:      "Total duration of requests in microseconds.",
-		}, fieldKeys),
-		svc)
 
 	httpLogger := log.With(logger, "component", "http")
 
@@ -74,7 +55,6 @@ func main() {
 	mux.Handle("/v1/login/expk", service.MakeExpKHandler(svc, httpLogger))
 
 	http.Handle("/", service.MakeAccessControl(mux))
-	http.Handle("/metrics", promhttp.Handler())
 	http.Handle("/_status/liveness", service.MakeLivenessHandler())
 	http.Handle("/_status/readiness", service.MakeReadinessHandler())
 
