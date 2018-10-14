@@ -15,12 +15,11 @@ import (
 	"github.com/docker/docker/api/types/container"
 	docker "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"golang.org/x/crypto/openpgp/elgamal"
 )
 
 func TestClient_Register(t *testing.T) {
 
-	baseURL := before(t)
+	baseURL := "http://localhost:8080"
 
 	t.Run("should register a new user ID", func(t *testing.T) {
 		err := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}).Register("new-user", "password")
@@ -41,39 +40,28 @@ func TestClient_Register(t *testing.T) {
 		}
 	})
 
-	after(t)
 }
 
 func TestLogin(t *testing.T) {
 
-	//baseURL := before(t)
+	// often used big.Int
+	var two = big.NewInt(2)
+
 	baseURL := "http://localhost:8080"
 	bits := 8
 
+	max := new(big.Int)
+	max.Exp(two, big.NewInt(int64(bits)), nil)
+
+	k, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		t.Errorf("error: %s", err)
+	}
+
 	q, err := rand.Prime(rand.Reader, bits)
 	if err != nil {
-		t.Fatal(err)
+		t.Errorf("error: %s", err)
 	}
-
-	g, err := rand.Int(rand.Reader, q)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	x, err := rand.Int(rand.Reader, q)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	k := &elgamal.PrivateKey{
-		PublicKey: elgamal.PublicKey{
-			G: g,
-			P: q,
-		},
-		X: x,
-	}
-
-	k.Y = new(big.Int).Exp(k.G, k.X, k.P)
 
 	c := New(&http.Client{}, Configuration{
 		q:    q,
@@ -115,8 +103,6 @@ func TestLogin(t *testing.T) {
 		}
 		c.Logout()
 	})
-
-	after(t)
 }
 
 func before(t *testing.T) string {

@@ -14,8 +14,6 @@ import (
 	"path"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
-
-	"golang.org/x/crypto/openpgp/elgamal"
 )
 
 // ErrUserNotCreated in repostory
@@ -23,6 +21,10 @@ var ErrUserNotCreated = errors.New("user not created")
 
 // ErrAuthenticationFailed covers several authentication issues
 var ErrAuthenticationFailed = errors.New("authentication failed")
+
+// often used big.Int
+var one = big.NewInt(1)
+var two = big.NewInt(2)
 
 // Client represent Online Sphinx Client
 type Client struct {
@@ -40,13 +42,14 @@ type Configuration struct {
 	cID  string
 	hash func() hash.Hash
 	q    *big.Int
-	k    *elgamal.PrivateKey
+	k    *big.Int
 
 	bits         *big.Int
 	contentType  string
 	baseURL      string
 	registerPath string
 	expkPath     string
+	verifyPath   string
 }
 
 // New returns a Online SPHINX client
@@ -67,10 +70,25 @@ func (c *Client) Login(username, password string) error {
 		return err
 	}
 
-	b, kinv := blind(password, c.config.q, max, c.config.hash)
+	k, err := rand.Int(rand.Reader, max)
 	if err != nil {
 		return err
 	}
+
+	p := new(big.Int)
+	p.SetBytes(c.config.hash().Sum([]byte(password)))
+
+	g := crypto.ExpInGroup(p, two, c.config.q)
+
+	kinv := new(big.Int)
+	kinv.ModInverse(k, c.config.q)
+
+	if kinv == nil {
+		kinv = big.NewInt(0)
+	}
+
+	// blinding
+	b := crypto.ExpInGroup(g, k, c.config.q)
 
 	jsonReq, err := json.Marshal(&expKRequest{
 		Username: username,
@@ -104,15 +122,13 @@ func (c *Client) Login(username, password string) error {
 	bd := new(big.Int)
 	bd.SetString(jsonResp.BD, 16)
 
-	B0 := unblind(bd, kinv, c.config.q)
+	B0 := crypto.ExpInGroup(bd, kinv, c.config.q)
 
 	Q0 := new(big.Int)
 	Q0.SetString(jsonResp.Q0, 16)
 
-	_, err = elgamal.Decrypt(c.config.k, B0, Q0)
-	if err != nil {
-		return err
-	}
+	mk := new(big.Int)
+	mk.Mul(crypto.ExpInGroup(B0, c.config.k, c.config.q), Q0)
 
 	kv := new(big.Int)
 	kv.SetString(jsonResp.KV, 16)
@@ -126,18 +142,13 @@ func (c *Client) Login(username, password string) error {
 	sNonce := new(big.Int)
 	sNonce.SetString(jsonResp.SNonce, 16)
 
-	SKi := hmacBigInt(c.config.hash, kv, []*big.Int{cID, sID, cNonce, sNonce})
-
-	err = c.verify(SKi)
-	if err != nil {
-		return err
+	mac := hmac.New(c.config.hash, kv.Bytes())
+	for _, d := range []*big.Int{cID, sID, cNonce, sNonce} {
+		mac.Write(d.Bytes())
 	}
 
-	MACski := hmacBigInt(c.config.hash, SKi, []*big.Int{cID, sID, big.NewInt(1)})
-	_, err = c.GetMetadata(MACski)
-	if err != nil {
-		return err
-	}
+	SKi := new(big.Int)
+	SKi.SetBytes(mac.Sum(nil))
 
 	return nil
 }
@@ -165,10 +176,6 @@ func (c *Client) Register(username, password string) error {
 	return nil
 }
 
-type registerRequest struct {
-	Username string `json:"username"`
-}
-
 // Logout an logged in user
 func (c *Client) Logout() error {
 	return nil
@@ -176,6 +183,57 @@ func (c *Client) Logout() error {
 
 // Verify session key SKi
 func (c *Client) verify(SKi *big.Int) error {
+
+	max := new(big.Int)
+	max.Exp(two, c.config.bits, nil)
+
+	vNonce, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		return err
+	}
+
+	mac := hmac.New(c.config.hash, SKi.Bytes())
+	for _, d := range []*big.Int{vNonce} {
+		mac.Write(d.Bytes())
+	}
+
+	v := new(big.Int)
+	v.SetBytes(mac.Sum(nil))
+
+	jsonReq, err := json.Marshal(&verifyRequest{
+		VNonce: vNonce.Text(16),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	u, err := url.Parse(c.config.baseURL)
+	if err != nil {
+		return err
+	}
+
+	u.Path = path.Join(u.Path, c.config.verifyPath)
+
+	resp, err := c.http.Post(u.String(), c.config.contentType, bytes.NewBuffer(jsonReq))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	jsonResp := verifyResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&jsonResp)
+	if err != nil {
+		return err
+	}
+
+	w := new(big.Int)
+	w.SetString(jsonResp.WNonce, 16)
+
+	if v.Add(one, nil).Cmp(w) != 0 {
+		return ErrAuthenticationFailed
+	}
+
 	return nil
 }
 
@@ -186,62 +244,4 @@ type Metadata struct {
 // GetMetadata request metadata
 func (c *Client) GetMetadata(MACski *big.Int) (*Metadata, error) {
 	return &Metadata{}, nil
-}
-
-type expKRequest struct {
-	Username string `json:"username"`
-	CNonce   string `json:"cNonce"`
-	B        string `json:"b"`
-	Q        string `json:"q"`
-}
-
-type expKResponse struct {
-	SID    string `json:"sID"`
-	SNonce string `json:"sNonce"`
-	BD     string `json:"bd"`
-	Q0     string `json:"Q0"`
-	KV     string `json:"kv"`
-	Err    error  `json:"error"`
-}
-
-type metadataRequest struct {
-}
-
-var one = big.NewInt(1)
-var two = big.NewInt(2)
-
-func hmacBigInt(h func() hash.Hash, key *big.Int, data []*big.Int) (m *big.Int) {
-	mac := hmac.New(h, key.Bytes())
-	for _, d := range data {
-		mac.Write(d.Bytes())
-	}
-	m = big.NewInt(0)
-	m.SetBytes(mac.Sum(nil))
-	return
-}
-
-func blind(pwd string, q, max *big.Int, h func() hash.Hash) (b, kinv *big.Int) {
-	p := new(big.Int)
-	p.SetBytes(h().Sum([]byte(pwd)))
-
-	g := crypto.ExpInGroup(p, two, q)
-
-	k, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		return
-	}
-
-	kinv = big.NewInt(0).ModInverse(k, q)
-	if kinv == nil {
-		kinv = big.NewInt(0)
-	}
-
-	// blinding
-	b = crypto.ExpInGroup(g, k, q)
-	return
-}
-
-func unblind(bd, kinv, q *big.Int) (B0 *big.Int) {
-	B0 = crypto.ExpInGroup(bd, kinv, q)
-	return
 }
