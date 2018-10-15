@@ -1,11 +1,8 @@
 package crypto
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
-	"crypto/sha512"
 	"hash"
-	"log"
 	"math/big"
 	"reflect"
 	"testing"
@@ -41,80 +38,63 @@ func TestExpInGroup(t *testing.T) {
 	}
 }
 
-func fordKaliskiPasswordToRandom(h hash.Hash, bits int) *big.Int {
-	pwd := big.NewInt(0).SetBytes(h.Sum([]byte("Ford Kaliski Password to Random")))
-
-	q, err := rand.Prime(rand.Reader, bits)
-	if err != nil {
-		log.Fatal(err)
+func TestHashInGroup(t *testing.T) {
+	type args struct {
+		password string
+		newHash  func() hash.Hash
+		q        *big.Int
 	}
-
-	k, err := rand.Int(rand.Reader, q)
-	if err != nil {
-		log.Fatal(err)
+	tests := []struct {
+		name string
+		args args
+		want *big.Int
+	}{
+		{
+			"should hash in group 'password'",
+			args{
+				password: "password",
+				newHash:  sha256.New,
+				q:        big.NewInt(42),
+			},
+			big.NewInt(59),
+		},
 	}
-
-	d, err := rand.Int(rand.Reader, q)
-	if err != nil {
-		log.Fatal(err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := HashInGroup(tt.args.password, tt.args.newHash, tt.args.q); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("HashInGroup() = %v, want %v", got, tt.want)
+			}
+		})
 	}
+}
 
-	kinv := big.NewInt(0).ModInverse(k, q)
-	if kinv == nil {
-		kinv = big.NewInt(0)
+func TestBlind(t *testing.T) {
+	type args struct {
+		g    *big.Int
+		q    *big.Int
+		bits *big.Int
 	}
-
-	g := ExpInGroup(pwd, two, q)
-
-	// blinding
-	b := ExpInGroup(g, k, q)
-
-	// exp with secret
-	bd := ExpInGroup(b, d, q)
-
-	// unblinding
-	r := ExpInGroup(bd, kinv, q)
-	return r
-}
-
-var result *big.Int
-
-func benchmarkFordKaliskiPasswordToRandom(b *testing.B, h hash.Hash, bits int) {
-	var r *big.Int
-	for n := 0; n < b.N; n++ {
-		r = fordKaliskiPasswordToRandom(h, bits)
+	tests := []struct {
+		name    string
+		args    args
+		wantErr error
+	}{
+		{
+			"should blind g within group",
+			args{
+				g:    big.NewInt(42),
+				q:    big.NewInt(91),
+				bits: big.NewInt(8),
+			},
+			nil,
+		},
 	}
-	result = r
-}
-
-func BenchmarkFordKaliskiPasswordToRandom_SHA256_8Bits(b *testing.B) {
-	benchmarkFordKaliskiPasswordToRandom(b, sha256.New(), 8)
-}
-
-func BenchmarkFordKaliskiPasswordToRandom_SHA256_16Bits(b *testing.B) {
-	benchmarkFordKaliskiPasswordToRandom(b, sha256.New(), 16)
-}
-
-func BenchmarkFordKaliskiPasswordToRandom_SHA256_32Bits(b *testing.B) {
-	benchmarkFordKaliskiPasswordToRandom(b, sha256.New(), 32)
-}
-
-func BenchmarkFordKaliskiPasswordToRandom_SHA256_64Bits(b *testing.B) {
-	benchmarkFordKaliskiPasswordToRandom(b, sha256.New(), 64)
-}
-
-func BenchmarkFordKaliskiPasswordToRandom_SHA256_128Bits(b *testing.B) {
-	benchmarkFordKaliskiPasswordToRandom(b, sha256.New(), 128)
-}
-
-func BenchmarkFordKaliskiPasswordToRandom_SHA256_256Bits(b *testing.B) {
-	benchmarkFordKaliskiPasswordToRandom(b, sha256.New(), 256)
-}
-
-func BenchmarkFordKaliskiPasswordToRandom_SHA512_512Bits(b *testing.B) {
-	benchmarkFordKaliskiPasswordToRandom(b, sha512.New(), 512)
-}
-
-func BenchmarkFordKaliskiPasswordToRandom_SHA512_1024Bits(b *testing.B) {
-	benchmarkFordKaliskiPasswordToRandom(b, sha512.New(), 1024)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, _, err := Blind(tt.args.g, tt.args.q, tt.args.bits)
+			if err != tt.wantErr {
+				t.Errorf("Blind() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
