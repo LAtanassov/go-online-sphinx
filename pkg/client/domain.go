@@ -5,6 +5,7 @@ import (
 	"math/big"
 )
 
+// NewUser ...
 func NewUser(username string) User {
 	return User{
 		username: username,
@@ -14,6 +15,7 @@ func NewUser(username string) User {
 // User ...
 type User struct {
 	username string
+	cID      *big.Int
 	q        *big.Int
 	k        *big.Int
 }

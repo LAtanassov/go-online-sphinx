@@ -112,32 +112,40 @@ func MakeReadinessHandler() http.Handler {
 
 func decodeRegisterRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
-		Username string `json:"username"`
+		CID string `json:"CID"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, err
 	}
 
+	cID := new(big.Int)
+	cID.SetString(body.CID, 16)
+
 	return registerRequest{
-		username: body.Username,
+		cID: cID,
 	}, nil
 }
 
 func decodeVerifyRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
-		VNonce string `json:"vNonce"`
+		G string `json:"g"`
+		Q string `json:"q"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, err
 	}
 
-	v := new(big.Int)
-	v.SetString(body.VNonce, 16)
+	g := new(big.Int)
+	g.SetString(body.G, 16)
+
+	q := new(big.Int)
+	q.SetString(body.Q, 16)
 
 	return verifyRequest{
-		v: v,
+		g: g,
+		q: q,
 	}, nil
 }
 
@@ -151,24 +159,24 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 }
 
 func encodeVerifyResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if e, ok := response.(errorer); ok && e.error() != nil {
-		encodeError(ctx, e.error(), w)
+	if err, ok := response.(errorer); ok && err.error() != nil {
+		encodeError(ctx, err.error(), w)
 		return nil
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
-	r, ok := response.(verifyResponse)
+	resp, ok := response.(verifyResponse)
 	if !ok {
 		encodeError(ctx, ErrUnexpectedType, w)
 		return nil
 	}
 
 	body := struct {
-		WNonce string `json:"wNonce"`
-		Err    error  `json:"error,omitempty"`
+		R   string `json:"r"`
+		Err error  `json:"error,omitempty"`
 	}{
-		r.w.Text(16),
-		r.Err,
+		resp.r.Text(16),
+		resp.Err,
 	}
 
 	return json.NewEncoder(w).Encode(body)
@@ -176,15 +184,18 @@ func encodeVerifyResponse(ctx context.Context, w http.ResponseWriter, response i
 
 func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var body struct {
-		Username string `json:"username"`
-		CNonce   string `json:"cNonce"`
-		B        string `json:"b"`
-		Q        string `json:"q"`
+		CID    string `json:"cID"`
+		CNonce string `json:"cNonce"`
+		B      string `json:"b"`
+		Q      string `json:"q"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, err
 	}
+
+	cID := new(big.Int)
+	cID.SetString(body.CID, 16)
 
 	cNonce := new(big.Int)
 	cNonce.SetString(body.CNonce, 16)
@@ -196,10 +207,10 @@ func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) 
 	q.SetString(body.Q, 16)
 
 	return expKRequest{
-		username: body.Username,
-		cNonce:   cNonce,
-		b:        b,
-		q:        q,
+		cID:    cID,
+		cNonce: cNonce,
+		b:      b,
+		q:      q,
 	}, nil
 }
 
@@ -224,7 +235,7 @@ func encodeExpKResponse(ctx context.Context, w http.ResponseWriter, response int
 		KV     string `json:"kv"`
 		Err    error  `json:"error,omitempty"`
 	}{
-		r.sID,
+		r.sID.Text(16),
 		r.sNonce.Text(16),
 		r.bd.Text(16),
 		r.q0.Text(16),

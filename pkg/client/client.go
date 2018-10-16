@@ -2,16 +2,21 @@ package client
 
 import (
 	"bytes"
+	"crypto/rand"
 	"errors"
 	"io"
 	"math/big"
 	"net/http"
+	"os"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 )
 
-// ErrUserNotCreated ...
-var ErrUserNotCreated = errors.New("authentication failed")
+// ErrRegistrationFailed ...
+var ErrRegistrationFailed = errors.New("registration failed")
+
+// ErrAuthenticationFailed ...
+var ErrAuthenticationFailed = errors.New("authentication failed")
 
 // Client represents an Online SPHINX Client
 type Client struct {
@@ -45,7 +50,7 @@ func (clt *Client) Register(usr User) error {
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		return ErrUserNotCreated
+		return ErrRegistrationFailed
 	}
 	return nil
 }
@@ -59,7 +64,7 @@ func (clt *Client) Login(usr User, pwd string) error {
 		return err
 	}
 
-	buf, err := marshalExpKRequest(cNonce, b, usr.q)
+	buf, err := marshalExpKRequest(usr.cID, cNonce, b, usr.q)
 	if err != nil {
 		return err
 	}
@@ -78,14 +83,47 @@ func (clt *Client) Login(usr User, pwd string) error {
 
 	B0 := crypto.Unblind(bd, kinv, usr.q)
 
-	cID := new(big.Int)
-	cID.SetString(usr.username, 16)
-
 	mk := new(big.Int)
 	mk.Mul(crypto.ExpInGroup(B0, usr.k, usr.q), q0)
 
 	SKi := new(big.Int)
-	SKi.SetBytes(crypto.HmacData(clt.config.hash, kv.Bytes(), cID.Bytes(), sID.Bytes(), cNonce.Bytes(), sNonce.Bytes()))
+	SKi.SetBytes(crypto.HmacData(clt.config.hash, kv.Bytes(), usr.cID.Bytes(), sID.Bytes(), cNonce.Bytes(), sNonce.Bytes()))
+
+	os.Setenv("SKi", SKi.Text(16))
+	os.Setenv("mk", mk.Text(16))
+
+	return nil
+}
+
+// Verify session key SKi
+func (clt *Client) Verify(usr User) error {
+	SKi := new(big.Int)
+	SKi.SetString(os.Getenv("SKi"), 16)
+
+	g, err := rand.Int(rand.Reader, usr.q)
+	if err != nil {
+		return err
+	}
+
+	buf, err := marshalVerifyRequest(g, usr.q)
+	if err != nil {
+		return err
+	}
+
+	resp, err := clt.poster.Post(clt.config.verifyPath, clt.config.contentType, bytes.NewBuffer(buf))
+	if err != nil {
+		return err
+	}
+
+	r, err := unmarsalVerifyResponse(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	rv := crypto.ExpInGroup(g, SKi, usr.q)
+	if r.Cmp(rv) != 0 {
+		return ErrAuthenticationFailed
+	}
 
 	return nil
 }

@@ -11,10 +11,10 @@ type registerRequest struct {
 }
 
 type expKRequest struct {
-	Username string `json:"username"`
-	CNonce   string `json:"cNonce"`
-	B        string `json:"b"`
-	Q        string `json:"q"`
+	CID    string `json:"cID"`
+	CNonce string `json:"cNonce"`
+	B      string `json:"b"`
+	Q      string `json:"q"`
 }
 
 type expKResponse struct {
@@ -27,11 +27,12 @@ type expKResponse struct {
 }
 
 type verifyRequest struct {
-	VNonce string `json:"vNonce"`
+	G string `json:"g"`
+	Q string `json:"q"`
 }
 
 type verifyResponse struct {
-	WNonce string `json:"wNonce"`
+	R string `json:"r"`
 }
 
 type metadataRequest struct {
@@ -41,8 +42,9 @@ func marshalRegisterRequest(username string) ([]byte, error) {
 	return json.Marshal(&registerRequest{Username: username})
 }
 
-func marshalExpKRequest(cNonce, b, q *big.Int) ([]byte, error) {
+func marshalExpKRequest(cID, cNonce, b, q *big.Int) ([]byte, error) {
 	return json.Marshal(&expKRequest{
+		CID:    cID.Text(16),
 		CNonce: cNonce.Text(16),
 		B:      b.Text(16),
 		Q:      q.Text(16),
@@ -82,4 +84,25 @@ func marshalExpKResponse(sID, sNonce, bd, kv, q0 *big.Int) ([]byte, error) {
 		KV:     kv.Text(16),
 		Q0:     q0.Text(16),
 	})
+}
+
+func marshalVerifyRequest(g, q *big.Int) ([]byte, error) {
+	return json.Marshal(&verifyRequest{
+		G: g.Text(16),
+		Q: q.Text(16),
+	})
+}
+
+func unmarsalVerifyResponse(rd io.Reader) (*big.Int, error) {
+
+	resp := verifyResponse{}
+	err := json.NewDecoder(rd).Decode(&resp)
+	if err != nil {
+		return nil, err
+	}
+
+	r := new(big.Int)
+	r.SetString(resp.R, 16)
+
+	return r, nil
 }

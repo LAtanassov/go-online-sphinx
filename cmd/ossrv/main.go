@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"flag"
 	"fmt"
 	"math/big"
@@ -44,7 +45,7 @@ func main() {
 	}
 
 	var svc service.Service
-	svc = service.New("sID", k, q0, bits, repo)
+	svc = service.New(repo, service.NewConfiguration(big.NewInt(1), k, q0, bits, sha256.New))
 	svc = service.NewLoggingService(logger, svc)
 
 	httpLogger := log.With(logger, "component", "http")

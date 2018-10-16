@@ -19,29 +19,29 @@ func NewLoggingService(logger log.Logger, s Service) *LoggingService {
 }
 
 // Register wraps service.Register and writes log msg
-func (s *LoggingService) Register(username string) (err error) {
+func (s *LoggingService) Register(cID *big.Int) (err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "Register",
 			"took", time.Since(begin),
 
-			"username", username,
+			"cID", cID,
 
 			"err", err,
 		)
 	}(time.Now())
 
-	return s.Service.Register(username)
+	return s.Service.Register(cID)
 }
 
 // ExpK wraps service.ExpK and writes log msg
-func (s *LoggingService) ExpK(username string, b, q *big.Int) (sID string, sNonce, bd, q0, kv *big.Int, err error) {
+func (s *LoggingService) ExpK(cID, cNonce, b, q *big.Int) (sID, sNonce, bd, q0, kv *big.Int, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "ExpK",
 			"took", time.Since(begin),
 
-			"username", username,
+			"cID", cID.Text(16),
 			"b", b.Text(16),
 			"q", q.Text(16),
 
@@ -55,11 +55,11 @@ func (s *LoggingService) ExpK(username string, b, q *big.Int) (sID string, sNonc
 		)
 	}(time.Now())
 
-	return s.Service.ExpK(username, b, q)
+	return s.Service.ExpK(cID, cNonce, b, q)
 }
 
 // Verify wraps service.Verify and writes log msg
-func (s *LoggingService) Verify(v *big.Int) (w *big.Int, err error) {
+func (s *LoggingService) Verify(g, q *big.Int) (r *big.Int, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "Verify",
@@ -69,5 +69,5 @@ func (s *LoggingService) Verify(v *big.Int) (w *big.Int, err error) {
 		)
 	}(time.Now())
 
-	return s.Service.Verify(v)
+	return s.Service.Verify(g, q)
 }

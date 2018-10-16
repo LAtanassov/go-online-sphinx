@@ -1,6 +1,7 @@
 package service
 
 import (
+	"math/big"
 	"testing"
 )
 
@@ -8,7 +9,7 @@ func TestInMemoryRepository_Add(t *testing.T) {
 
 	t.Run("should add new user", func(t *testing.T) {
 		r := NewInMemoryRepository()
-		err := r.Add(User{username: "hans"})
+		err := r.Add(User{cID: big.NewInt(1)})
 		if err != nil {
 			t.Errorf("InMemoryRepository.Add() error = %v", err)
 		}
@@ -16,8 +17,8 @@ func TestInMemoryRepository_Add(t *testing.T) {
 
 	t.Run("should return error if an existing user is added again", func(t *testing.T) {
 		r := NewInMemoryRepository()
-		r.Add(User{username: "hans"})
-		err := r.Add(User{username: "hans"})
+		r.Add(User{cID: big.NewInt(1)})
+		err := r.Add(User{cID: big.NewInt(1)})
 		if err != ErrUserAlreadyExists {
 			t.Errorf("InMemoryRepository.Add() error = %v wantErr = %v", err, ErrUserAlreadyExists)
 		}
@@ -25,17 +26,17 @@ func TestInMemoryRepository_Add(t *testing.T) {
 
 	t.Run("should return an existing user", func(t *testing.T) {
 		r := NewInMemoryRepository()
-		err := r.Add(User{username: "hans"})
+		err := r.Add(User{cID: big.NewInt(1)})
 		if err != nil {
 			t.Errorf("InMemoryRepository.Add() error = %v", err)
 		}
 
-		u, err := r.Get("hans")
+		u, err := r.Get(big.NewInt(1).Text(16))
 		if err != nil {
 			t.Errorf("InMemoryRepository.Get() error = %v", err)
 		}
 
-		if u.username != "hans" {
+		if u.cID.Text(16) != big.NewInt(1).Text(16) {
 			t.Errorf("InMemoryRepository.Get() error = %v", err)
 		}
 	})
@@ -43,7 +44,7 @@ func TestInMemoryRepository_Add(t *testing.T) {
 	t.Run("should return error if user does not exist", func(t *testing.T) {
 		r := NewInMemoryRepository()
 
-		_, err := r.Get("hans")
+		_, err := r.Get(big.NewInt(1).Text(16))
 		if err != ErrUserNotFound {
 			t.Errorf("InMemoryRepository.Get() error = %v wantError = %v", err, ErrUserNotFound)
 		}

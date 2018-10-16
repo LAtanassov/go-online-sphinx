@@ -42,7 +42,7 @@ func TestClient_Register(t *testing.T) {
 
 }
 
-func TestLogin(t *testing.T) {
+func TestClient_Login(t *testing.T) {
 
 	// often used big.Int
 	var two = big.NewInt(2)

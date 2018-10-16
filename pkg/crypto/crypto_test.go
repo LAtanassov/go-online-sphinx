@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestExpInGroup(t *testing.T) {
+func TestCrypto_ExpInGroup(t *testing.T) {
 	type args struct {
 		g *big.Int
 		k *big.Int
@@ -38,7 +38,7 @@ func TestExpInGroup(t *testing.T) {
 	}
 }
 
-func TestHashInGroup(t *testing.T) {
+func TestCrypto_HashInGroup(t *testing.T) {
 	type args struct {
 		password string
 		newHash  func() hash.Hash
@@ -68,7 +68,7 @@ func TestHashInGroup(t *testing.T) {
 	}
 }
 
-func TestBlind(t *testing.T) {
+func TestCrypto_Blind(t *testing.T) {
 	type args struct {
 		g    *big.Int
 		q    *big.Int

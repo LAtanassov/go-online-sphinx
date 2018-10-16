@@ -8,14 +8,14 @@ import (
 )
 
 type expKRequest struct {
-	username string
-	cNonce   *big.Int
-	b        *big.Int
-	q        *big.Int
+	cID    *big.Int
+	cNonce *big.Int
+	b      *big.Int
+	q      *big.Int
 }
 
 type expKResponse struct {
-	sID    string
+	sID    *big.Int
 	sNonce *big.Int
 	bd     *big.Int
 	q0     *big.Int
@@ -29,13 +29,13 @@ func makeExpKEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(expKRequest)
 
-		sID, sNonce, bd, q0, kv, err := s.ExpK(req.username, req.b, req.q)
+		sID, sNonce, bd, q0, kv, err := s.ExpK(req.cID, req.cNonce, req.b, req.q)
 		return expKResponse{sID: sID, sNonce: sNonce, bd: bd, q0: q0, kv: kv, Err: err}, nil
 	}
 }
 
 type registerRequest struct {
-	username string
+	cID *big.Int
 }
 
 type registerResponse struct {
@@ -45,24 +45,25 @@ type registerResponse struct {
 func makeRegisterEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(registerRequest)
-		err := s.Register(req.username)
+		err := s.Register(req.cID)
 		return registerResponse{Err: err}, nil
 	}
 }
 
 type verifyRequest struct {
-	v *big.Int
+	g *big.Int
+	q *big.Int
 }
 
 type verifyResponse struct {
-	w   *big.Int
+	r   *big.Int
 	Err error `json:"error,omitempty"`
 }
 
 func makeVerifyEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(verifyRequest)
-		w, err := s.Verify(req.v)
-		return verifyResponse{w: w, Err: err}, nil
+		r, err := s.Verify(req.g, req.q)
+		return verifyResponse{r: r, Err: err}, nil
 	}
 }

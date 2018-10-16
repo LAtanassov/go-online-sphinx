@@ -34,12 +34,12 @@ func Blind(g, q, bits *big.Int) (cNonce, b, kinv *big.Int, err error) {
 	max := new(big.Int)
 	max.Exp(two, bits, nil)
 
-	cNonce, err = rand.Int(rand.Reader, max)
+	cNonce, err = rand.Int(rand.Reader, q)
 	if err != nil {
 		return
 	}
 
-	k, err := rand.Int(rand.Reader, max)
+	k, err := rand.Int(rand.Reader, q)
 	if err != nil {
 		return
 	}
