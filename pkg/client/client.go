@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"io"
 	"math/big"
@@ -44,12 +45,12 @@ func (clt *Client) Register(usr User) error {
 		return err
 	}
 
-	resp, err := clt.poster.Post(clt.config.registerPath, clt.config.contentType, bytes.NewBuffer(buf))
+	r, err := clt.poster.Post(clt.config.registerPath, clt.config.contentType, bytes.NewBuffer(buf))
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusCreated {
+	if r.StatusCode != http.StatusCreated {
 		return ErrRegistrationFailed
 	}
 	return nil
@@ -69,17 +70,16 @@ func (clt *Client) Login(usr User, pwd string) error {
 		return err
 	}
 
-	resp, err := clt.poster.Post(clt.config.expkPath, clt.config.contentType, bytes.NewBuffer(buf))
+	r, err := clt.poster.Post(clt.config.expkPath, clt.config.contentType, bytes.NewBuffer(buf))
 	if err != nil {
 		return err
 	}
 
-	defer resp.Body.Close()
-
-	sID, sNonce, bd, kv, q0, err := unmarsalExpKResponse(resp.Body)
+	sID, sNonce, bd, kv, q0, err := unmarsalExpKResponse(r.Body)
 	if err != nil {
 		return err
 	}
+	defer r.Body.Close()
 
 	B0 := crypto.Unblind(bd, kinv, usr.q)
 
@@ -91,6 +91,8 @@ func (clt *Client) Login(usr User, pwd string) error {
 
 	os.Setenv("SKi", SKi.Text(16))
 	os.Setenv("mk", mk.Text(16))
+	os.Setenv("sID", sID.Text(16))
+	os.Setenv("cID", usr.cID.Text(16))
 
 	return nil
 }
@@ -105,25 +107,62 @@ func (clt *Client) Verify(usr User) error {
 		return err
 	}
 
-	buf, err := marshalVerifyRequest(g, usr.q)
+	challenge, err := marshalVerifyRequest(g, usr.q)
 	if err != nil {
 		return err
 	}
 
-	resp, err := clt.poster.Post(clt.config.verifyPath, clt.config.contentType, bytes.NewBuffer(buf))
+	r, err := clt.poster.Post(clt.config.verifyPath, clt.config.contentType, bytes.NewBuffer(challenge))
 	if err != nil {
 		return err
 	}
 
-	r, err := unmarsalVerifyResponse(resp.Body)
+	response, err := unmarsalVerifyResponse(r.Body)
 	if err != nil {
 		return err
 	}
+	defer r.Body.Close()
 
-	rv := crypto.ExpInGroup(g, SKi, usr.q)
-	if r.Cmp(rv) != 0 {
+	verifier := crypto.ExpInGroup(g, SKi, usr.q)
+	if response.Cmp(verifier) != 0 {
 		return ErrAuthenticationFailed
 	}
 
+	return nil
+}
+
+// GetMetadata ...
+func (clt *Client) GetMetadata(usr User) ([]Domain, error) {
+
+	SKi := new(big.Int)
+	SKi.SetString(os.Getenv("SKi"), 16)
+
+	sID := new(big.Int)
+	sID.SetString(os.Getenv("sID"), 16)
+
+	mac := crypto.HmacData(clt.config.hash, SKi.Bytes(), usr.cID.Bytes(), sID.Bytes())
+	req, err := marshalMetadataRequest(usr.cID.Text(16), hex.EncodeToString(mac))
+
+	r, err := clt.poster.Post(clt.config.metadataPath, clt.config.contentType, bytes.NewBuffer(req))
+	if err != nil {
+		return nil, err
+	}
+
+	domains, err := unmarsalMetadataResponse(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	return domains, nil
+}
+
+// Add ...
+func (clt *Client) Add() error {
+	return nil
+}
+
+// Get ...
+func (clt *Client) Get() error {
 	return nil
 }

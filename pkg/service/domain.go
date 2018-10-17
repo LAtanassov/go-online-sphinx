@@ -26,3 +26,7 @@ func NewConfiguration(sID, k, q0, bits *big.Int, hash func() hash.Hash) Configur
 		hash: hash,
 	}
 }
+
+// Domain ...
+type Domain struct {
+}

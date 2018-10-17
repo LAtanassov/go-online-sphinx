@@ -5,19 +5,19 @@ import (
 	"math/big"
 )
 
-// NewUser ...
-func NewUser(username string) User {
-	return User{
-		username: username,
-	}
-}
-
 // User ...
 type User struct {
 	username string
 	cID      *big.Int
 	q        *big.Int
 	k        *big.Int
+}
+
+// NewUser ...
+func NewUser(username string) User {
+	return User{
+		username: username,
+	}
 }
 
 // Configuration ...
@@ -29,7 +29,14 @@ type Configuration struct {
 	registerPath string
 	expkPath     string
 	verifyPath   string
+	metadataPath string
 }
 
-type metadata struct {
+// Domain ...
+type Domain struct {
+}
+
+// NewDomain ...
+func NewDomain() Domain {
+	return Domain{}
 }

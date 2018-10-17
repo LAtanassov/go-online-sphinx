@@ -32,10 +32,18 @@ type verifyRequest struct {
 }
 
 type verifyResponse struct {
-	R string `json:"r"`
+	R   string `json:"r"`
+	Err error  `json:"error"`
 }
 
 type metadataRequest struct {
+	CID string `json:"cID"`
+	MAC string `json:"mac"`
+}
+
+type metadataResponse struct {
+	Domains []Domain `json:"domains"`
+	Err     error    `json:"error"`
 }
 
 func marshalRegisterRequest(username string) ([]byte, error) {
@@ -56,6 +64,11 @@ func unmarsalExpKResponse(r io.Reader) (sID, sNonce, bd, kv, q0 *big.Int, err er
 	resp := expKResponse{}
 	err = json.NewDecoder(r).Decode(&resp)
 	if err != nil {
+		return
+	}
+
+	if resp.Err != nil {
+		err = resp.Err
 		return
 	}
 
@@ -93,6 +106,13 @@ func marshalVerifyRequest(g, q *big.Int) ([]byte, error) {
 	})
 }
 
+func marshalVerifyResponse(r *big.Int, err error) ([]byte, error) {
+	return json.Marshal(&verifyResponse{
+		R:   r.Text(16),
+		Err: err,
+	})
+}
+
 func unmarsalVerifyResponse(rd io.Reader) (*big.Int, error) {
 
 	resp := verifyResponse{}
@@ -101,8 +121,41 @@ func unmarsalVerifyResponse(rd io.Reader) (*big.Int, error) {
 		return nil, err
 	}
 
+	if resp.Err != nil {
+		return nil, resp.Err
+	}
+
 	r := new(big.Int)
 	r.SetString(resp.R, 16)
 
 	return r, nil
+}
+
+func marshalMetadataRequest(cID, mac string) ([]byte, error) {
+	return json.Marshal(&metadataRequest{
+		CID: cID,
+		MAC: mac,
+	})
+}
+
+func marshalMetadataResponse(domains []Domain, err error) ([]byte, error) {
+	return json.Marshal(&metadataResponse{
+		Domains: domains,
+		Err:     err,
+	})
+}
+
+func unmarsalMetadataResponse(r io.Reader) ([]Domain, error) {
+
+	resp := metadataResponse{}
+	err := json.NewDecoder(r).Decode(&resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Err != nil {
+		return nil, resp.Err
+	}
+
+	return resp.Domains, nil
 }

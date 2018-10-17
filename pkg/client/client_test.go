@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -79,36 +80,61 @@ func TestClient_Register(t *testing.T) {
 
 func TestClient_Verify(t *testing.T) {
 
-	t.Run("should register a new user", func(t *testing.T) {
+	t.Run("should return an ErrAuthenticationFailed if challenge/respond is not correct", func(t *testing.T) {
+
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusCreated)
+			n := big.NewInt(42)
+			buf, err := marshalVerifyResponse(n, nil)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			w.Write(buf)
 		}))
 		defer ts.Close()
+		os.Setenv("SKi", "A")
 
 		err := New(http.DefaultClient, Configuration{
-			registerPath: ts.URL,
-		}).Register(User{
-			username: "username",
+			verifyPath: ts.URL,
+		}).Verify(User{
+			q: big.NewInt(1),
 		})
-		if err != nil {
-			t.Errorf("Register() error = %v", err)
+		if err != ErrAuthenticationFailed {
+			t.Errorf("Verify() error = %v wantErr = %v", err, ErrAuthenticationFailed)
 		}
 	})
+}
 
-	t.Run("should return an error if the user exists within Online SPHINX service", func(t *testing.T) {
+func TestClient_GetMetadata(t *testing.T) {
+
+	t.Run("should return domains", func(t *testing.T) {
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusConflict)
+			buf, err := marshalMetadataResponse([]Domain{NewDomain()}, nil)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			w.Write(buf)
 		}))
 		defer ts.Close()
 
-		err := New(http.DefaultClient, Configuration{
-			registerPath: ts.URL,
-		}).Register(User{
-			username: "username",
+		os.Setenv("SKi", "A")
+		os.Setenv("sID", "A")
+
+		_, err := New(http.DefaultClient, Configuration{
+			metadataPath: ts.URL,
+			hash:         sha256.New,
+		}).GetMetadata(User{
+			cID: big.NewInt(1),
+			q:   big.NewInt(1),
 		})
-		if err != ErrRegistrationFailed {
-			t.Errorf("Register() error = %v wantErr = %v", err, ErrRegistrationFailed)
+		if err != nil {
+			t.Errorf("GetMetadata() error = %v", err)
 		}
 	})
 }
