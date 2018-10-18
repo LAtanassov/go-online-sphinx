@@ -20,6 +20,11 @@ type Service interface {
 	Register(cID *big.Int) error
 	ExpK(cID, cNonce, b, q *big.Int) (sID, sNonce, bd, q0, kv *big.Int, err error)
 	Verify(g, q *big.Int) (r *big.Int, err error)
+
+	GetMetadata(cID *big.Int, mac []byte) (domains []Domain, err error)
+
+	//AddVault(u string) (err error)
+	//GetVault(u string, bmk *big.Int) (bj, qj *big.Int, err error)
 }
 
 // Repository represents a store for user management - need to be implemented
@@ -30,8 +35,15 @@ type Repository interface {
 
 // User is an entity and contains all user related informated
 type User struct {
-	cID *big.Int
-	kv  *big.Int
+	cID   *big.Int
+	kv    *big.Int
+	store map[string]Vault
+}
+
+// Vault ...
+type Vault struct {
+	k *big.Int
+	q *big.Int
 }
 
 // OnlineSphinx provides all operations needed.
@@ -97,4 +109,8 @@ func (o *OnlineSphinx) Verify(g, q *big.Int) (r *big.Int, err error) {
 	SKi.SetString(os.Getenv("SKi"), 16)
 
 	return crypto.ExpInGroup(g, SKi, q), nil
+}
+
+func (o *OnlineSphinx) GetMetadata(cID *big.Int, mac []byte) (domains []Domain, err error) {
+	return nil, nil
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"math/big"
@@ -79,6 +80,27 @@ func MakeVerifyHandler(s Service, logger kitlog.Logger) http.Handler {
 	return r
 }
 
+// MakeMetadataHandler ...
+func MakeMetadataHandler(s Service, logger kitlog.Logger) http.Handler {
+	r := mux.NewRouter()
+
+	opts := []kithttp.ServerOption{
+		kithttp.ServerErrorLogger(logger),
+		kithttp.ServerErrorEncoder(encodeError),
+	}
+
+	metadataHandler := kithttp.NewServer(
+		makeMetadataEndpoint(s),
+		decodeMetadataRequest,
+		encodeMetadataResponse,
+		opts...,
+	)
+
+	r.Handle("/v1/metadata", metadataHandler).Methods("POST")
+
+	return r
+}
+
 // MakeAccessControl sets Header for access control
 func MakeAccessControl(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -118,6 +140,7 @@ func decodeRegisterRequest(_ context.Context, r *http.Request) (interface{}, err
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, err
 	}
+	defer r.Body.Close()
 
 	cID := new(big.Int)
 	cID.SetString(body.CID, 16)
@@ -136,6 +159,7 @@ func decodeVerifyRequest(_ context.Context, r *http.Request) (interface{}, error
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, err
 	}
+	defer r.Body.Close()
 
 	g := new(big.Int)
 	g.SetString(body.G, 16)
@@ -193,6 +217,7 @@ func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		return nil, err
 	}
+	defer r.Body.Close()
 
 	cID := new(big.Int)
 	cID.SetString(body.CID, 16)
@@ -244,6 +269,35 @@ func encodeExpKResponse(ctx context.Context, w http.ResponseWriter, response int
 	}
 
 	return json.NewEncoder(w).Encode(body)
+}
+
+func decodeMetadataRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var body struct {
+		CID string `json:"cID"`
+		MAC string `json:"mac"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	cID := new(big.Int)
+	cID.SetString(body.CID, 16)
+
+	mac, err := hex.DecodeString(body.MAC)
+	if err != nil {
+		return nil, err
+	}
+
+	return metadataRequest{
+		cID: cID,
+		mac: mac,
+	}, nil
+}
+
+func encodeMetadataResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	return nil
 }
 
 type errorer interface {

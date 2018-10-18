@@ -60,10 +60,28 @@ type verifyResponse struct {
 	Err error `json:"error,omitempty"`
 }
 
+type metadataRequest struct {
+	cID *big.Int
+	mac []byte
+}
+
+type metadataResponse struct {
+	domains []Domain
+	Err     error `json:"error,omitempty"`
+}
+
 func makeVerifyEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(verifyRequest)
 		r, err := s.Verify(req.g, req.q)
 		return verifyResponse{r: r, Err: err}, nil
+	}
+}
+
+func makeMetadataEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(metadataRequest)
+		domains, err := s.GetMetadata(req.cID, req.mac)
+		return metadataResponse{domains: domains, Err: err}, nil
 	}
 }
