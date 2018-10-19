@@ -29,12 +29,12 @@ func TestClient_Login(t *testing.T) {
 			expkPath: ts.URL,
 			hash:     sha256.New,
 			bits:     big.NewInt(8),
-		}).Login(User{
+		}, User{
 			username: "username",
 			cID:      big.NewInt(42),
 			k:        big.NewInt(42),
 			q:        big.NewInt(42),
-		}, "password")
+		}).Login("username", "password")
 
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
@@ -52,9 +52,7 @@ func TestClient_Register(t *testing.T) {
 
 		err := New(http.DefaultClient, Configuration{
 			registerPath: ts.URL,
-		}).Register(User{
-			username: "username",
-		})
+		}, User{}).Register("username")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
@@ -69,9 +67,7 @@ func TestClient_Register(t *testing.T) {
 
 		err := New(http.DefaultClient, Configuration{
 			registerPath: ts.URL,
-		}).Register(User{
-			username: "username",
-		})
+		}, User{}).Register("username")
 		if err != ErrRegistrationFailed {
 			t.Errorf("Register() error = %v wantErr = %v", err, ErrRegistrationFailed)
 		}
@@ -96,11 +92,14 @@ func TestClient_Verify(t *testing.T) {
 		defer ts.Close()
 		os.Setenv("SKi", "A")
 
-		err := New(http.DefaultClient, Configuration{
+		clt := New(http.DefaultClient, Configuration{
 			verifyPath: ts.URL,
-		}).Verify(User{
+		}, User{
 			q: big.NewInt(1),
 		})
+		clt.session.ski = big.NewInt(10)
+
+		err := clt.Verify()
 		if err != ErrAuthenticationFailed {
 			t.Errorf("Verify() error = %v wantErr = %v", err, ErrAuthenticationFailed)
 		}
@@ -123,16 +122,17 @@ func TestClient_GetMetadata(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		os.Setenv("SKi", "A")
-		os.Setenv("sID", "A")
-
-		_, err := New(http.DefaultClient, Configuration{
+		clt := New(http.DefaultClient, Configuration{
 			metadataPath: ts.URL,
 			hash:         sha256.New,
-		}).GetMetadata(User{
+		}, User{
 			cID: big.NewInt(1),
 			q:   big.NewInt(1),
 		})
+		clt.session.ski = big.NewInt(10)
+		clt.session.sID = big.NewInt(10)
+
+		_, err := clt.GetMetadata()
 		if err != nil {
 			t.Errorf("GetMetadata() error = %v", err)
 		}

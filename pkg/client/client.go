@@ -8,7 +8,6 @@ import (
 	"io"
 	"math/big"
 	"net/http"
-	"os"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 )
@@ -21,8 +20,10 @@ var ErrAuthenticationFailed = errors.New("authentication failed")
 
 // Client represents an Online SPHINX Client
 type Client struct {
-	poster Poster
-	config Configuration
+	poster  Poster
+	config  Configuration
+	user    User
+	session Session
 }
 
 // Poster provides a Post operation used e.g. http.DefaultClient
@@ -31,16 +32,18 @@ type Poster interface {
 }
 
 // New creates a new Online SPHINX Client.
-func New(pst Poster, cfg Configuration) *Client {
+func New(pst Poster, cfg Configuration, usr User) *Client {
 	return &Client{
-		poster: pst,
-		config: cfg,
+		poster:  pst,
+		config:  cfg,
+		user:    usr,
+		session: Session{},
 	}
 }
 
 // Register will register a new user.
-func (clt *Client) Register(usr User) error {
-	buf, err := marshalRegisterRequest(usr.username)
+func (clt *Client) Register(username string) error {
+	buf, err := marshalRegisterRequest(username)
 	if err != nil {
 		return err
 	}
@@ -57,15 +60,16 @@ func (clt *Client) Register(usr User) error {
 }
 
 // Login runs the Online SPHINX login protocol
-func (clt *Client) Login(usr User, pwd string) error {
+func (clt *Client) Login(username, pwd string) error {
 
-	g := crypto.HashInGroup(pwd, clt.config.hash, usr.q)
-	cNonce, b, kinv, err := crypto.Blind(g, usr.q, clt.config.bits)
+	// TODO load user from local config
+	g := crypto.HashInGroup(pwd, clt.config.hash, clt.user.q)
+	cNonce, b, kinv, err := crypto.Blind(g, clt.user.q, clt.config.bits)
 	if err != nil {
 		return err
 	}
 
-	buf, err := marshalExpKRequest(usr.cID, cNonce, b, usr.q)
+	buf, err := marshalExpKRequest(clt.user.cID, cNonce, b, clt.user.q)
 	if err != nil {
 		return err
 	}
@@ -81,33 +85,26 @@ func (clt *Client) Login(usr User, pwd string) error {
 	}
 	defer r.Body.Close()
 
-	B0 := crypto.Unblind(bd, kinv, usr.q)
+	B0 := crypto.Unblind(bd, kinv, clt.user.q)
 
-	mk := new(big.Int)
-	mk.Mul(crypto.ExpInGroup(B0, usr.k, usr.q), q0)
+	clt.session.ski = new(big.Int)
+	clt.session.ski.SetBytes(crypto.HmacData(clt.config.hash, kv.Bytes(), clt.user.cID.Bytes(), sID.Bytes(), cNonce.Bytes(), sNonce.Bytes()))
 
-	SKi := new(big.Int)
-	SKi.SetBytes(crypto.HmacData(clt.config.hash, kv.Bytes(), usr.cID.Bytes(), sID.Bytes(), cNonce.Bytes(), sNonce.Bytes()))
-
-	os.Setenv("SKi", SKi.Text(16))
-	os.Setenv("mk", mk.Text(16))
-	os.Setenv("sID", sID.Text(16))
-	os.Setenv("cID", usr.cID.Text(16))
-
+	clt.session.mk = new(big.Int)
+	clt.session.mk.Mul(crypto.ExpInGroup(B0, clt.user.k, clt.user.q), q0)
+	clt.session.sID = sID
 	return nil
 }
 
 // Verify session key SKi
-func (clt *Client) Verify(usr User) error {
-	SKi := new(big.Int)
-	SKi.SetString(os.Getenv("SKi"), 16)
+func (clt *Client) Verify() error {
 
-	g, err := rand.Int(rand.Reader, usr.q)
+	g, err := rand.Int(rand.Reader, clt.user.q)
 	if err != nil {
 		return err
 	}
 
-	challenge, err := marshalVerifyRequest(g, usr.q)
+	challenge, err := marshalVerifyRequest(g, clt.user.q)
 	if err != nil {
 		return err
 	}
@@ -123,7 +120,7 @@ func (clt *Client) Verify(usr User) error {
 	}
 	defer r.Body.Close()
 
-	verifier := crypto.ExpInGroup(g, SKi, usr.q)
+	verifier := crypto.ExpInGroup(g, clt.session.ski, clt.user.q)
 	if response.Cmp(verifier) != 0 {
 		return ErrAuthenticationFailed
 	}
@@ -132,16 +129,10 @@ func (clt *Client) Verify(usr User) error {
 }
 
 // GetMetadata ...
-func (clt *Client) GetMetadata(usr User) ([]Domain, error) {
+func (clt *Client) GetMetadata() ([]Domain, error) {
 
-	SKi := new(big.Int)
-	SKi.SetString(os.Getenv("SKi"), 16)
-
-	sID := new(big.Int)
-	sID.SetString(os.Getenv("sID"), 16)
-
-	mac := crypto.HmacData(clt.config.hash, SKi.Bytes(), usr.cID.Bytes(), sID.Bytes())
-	req, err := marshalMetadataRequest(usr.cID.Text(16), hex.EncodeToString(mac))
+	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), clt.user.cID.Bytes(), clt.session.sID.Bytes())
+	req, err := marshalMetadataRequest(clt.user.cID.Text(16), hex.EncodeToString(mac))
 
 	r, err := clt.poster.Post(clt.config.metadataPath, clt.config.contentType, bytes.NewBuffer(req))
 	if err != nil {

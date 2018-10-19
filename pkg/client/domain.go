@@ -36,6 +36,12 @@ type Configuration struct {
 type Domain struct {
 }
 
+type Session struct {
+	ski *big.Int
+	mk  *big.Int
+	sID *big.Int
+}
+
 // NewDomain ...
 func NewDomain() Domain {
 	return Domain{}
