@@ -26,7 +26,7 @@ func main() {
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 
 	var repo service.Repository
-	repo = service.NewInMemoryRepository()
+	repo = service.NewInMemoryUserRepository()
 
 	bits := big.NewInt(8)
 	max := new(big.Int)
@@ -44,8 +44,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	// TODO: load from env. or file later on
+	cfg := service.NewConfiguration(big.NewInt(1), k, q0, bits, sha256.New)
+
 	var svc service.Service
-	svc = service.New(repo, service.NewConfiguration(big.NewInt(1), k, q0, bits, sha256.New))
+	svc = service.New(repo, cfg)
 	svc = service.NewLoggingService(logger, svc)
 
 	httpLogger := log.With(logger, "component", "http")

@@ -107,9 +107,15 @@ func initRun(cmd *cobra.Command, args []string) {
 }
 
 func registerRun(cmd *cobra.Command, args []string) {
-	client.New(http.DefaultClient, client.Configuration{}, client.User{}).Register("username")
+	// TODO: load from env. or file
+	cfg := client.Configuration{}
+	repo := client.NewInMemoryUserRepository()
+	client.New(http.DefaultClient, cfg, repo).Register("username")
 }
 
 func loginRun(cmd *cobra.Command, args []string) {
-	client.New(http.DefaultClient, client.Configuration{}, client.User{}).Login("username", "password")
+	// TODO: load from env. or file
+	cfg := client.Configuration{}
+	repo := client.NewInMemoryUserRepository()
+	client.New(http.DefaultClient, cfg, repo).Login("username", "password")
 }

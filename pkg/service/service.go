@@ -33,13 +33,6 @@ type Repository interface {
 	Get(ID string) (User, error)
 }
 
-// User is an entity and contains all user related informated
-type User struct {
-	cID   *big.Int
-	kv    *big.Int
-	store map[string]Vault
-}
-
 // Vault ...
 type Vault struct {
 	k *big.Int

@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-func TestInMemoryRepository_Add(t *testing.T) {
+func TestInMemoryUserRepository_Add(t *testing.T) {
 
 	t.Run("should add new user", func(t *testing.T) {
-		r := NewInMemoryRepository()
+		r := NewInMemoryUserRepository()
 		err := r.Add(User{cID: big.NewInt(1)})
 		if err != nil {
 			t.Errorf("InMemoryRepository.Add() error = %v", err)
@@ -16,7 +16,7 @@ func TestInMemoryRepository_Add(t *testing.T) {
 	})
 
 	t.Run("should return error if an existing user is added again", func(t *testing.T) {
-		r := NewInMemoryRepository()
+		r := NewInMemoryUserRepository()
 		r.Add(User{cID: big.NewInt(1)})
 		err := r.Add(User{cID: big.NewInt(1)})
 		if err != ErrUserAlreadyExists {
@@ -25,7 +25,7 @@ func TestInMemoryRepository_Add(t *testing.T) {
 	})
 
 	t.Run("should return an existing user", func(t *testing.T) {
-		r := NewInMemoryRepository()
+		r := NewInMemoryUserRepository()
 		err := r.Add(User{cID: big.NewInt(1)})
 		if err != nil {
 			t.Errorf("InMemoryRepository.Add() error = %v", err)
@@ -42,7 +42,7 @@ func TestInMemoryRepository_Add(t *testing.T) {
 	})
 
 	t.Run("should return error if user does not exist", func(t *testing.T) {
-		r := NewInMemoryRepository()
+		r := NewInMemoryUserRepository()
 
 		_, err := r.Get(big.NewInt(1).Text(16))
 		if err != ErrUserNotFound {
