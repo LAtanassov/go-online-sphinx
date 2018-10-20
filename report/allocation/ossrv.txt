@@ -1,0 +1,155 @@
+# github.com/LAtanassov/go-online-sphinx/cmd/ossrv
+cmd/ossrv/main.go:70:3: main.func1 capturing by value: logger (addr=false assign=false width=16)
+cmd/ossrv/main.go:70:47: main.func1 capturing by value: httpAddr (addr=false assign=false width=8)
+cmd/ossrv/main.go:71:3: main.func1 capturing by value: errs (addr=false assign=false width=8)
+cmd/ossrv/main.go:76:3: main.func2 capturing by value: errs (addr=false assign=false width=8)
+cmd/ossrv/main.go:19:6: cannot inline main: unhandled op PROC
+cmd/ossrv/main.go:25:30: inlining call to "github.com/go-kit/kit/log".NewLogfmtLogger func(io.Writer) "github.com/go-kit/kit/log".Logger { return "github.com/go-kit/kit/log".Logger(&"github.com/go-kit/kit/log".logfmtLogger literal) }
+cmd/ossrv/main.go:29:42: inlining call to service.NewInMemoryUserRepository func() *service.UserRepository { return &service.UserRepository literal }
+cmd/ossrv/main.go:48:33: inlining call to service.NewConfiguration func(*big.Int, *big.Int, *big.Int, *big.Int, func() hash.Hash) service.Configuration { return service.Configuration literal }
+cmd/ossrv/main.go:51:19: inlining call to service.New func(service.Repository, service.Configuration) *service.OnlineSphinx { return &service.OnlineSphinx literal }
+cmd/ossrv/main.go:52:33: inlining call to service.NewLoggingService func("github.com/go-kit/kit/log".Logger, service.Service) *service.LoggingService { return &service.LoggingService literal }
+cmd/ossrv/main.go:56:25: inlining call to http.NewServeMux func() *http.ServeMux { return new(http.ServeMux) }
+cmd/ossrv/main.go:69:5: cannot inline main.func1: function too complex: cost 183 exceeds budget 80
+cmd/ossrv/main.go:73:5: cannot inline main.func2: function too complex: cost 180 exceeds budget 80
+/tmp/go-build390288135/b001/_gomod_.go:6:8: can inline init.0 as: func() { __debug_modinfo__ = "0w\xaf\f\x92t\b\x02A\xe1\xc1\a\xe6\xd6\x18\xe6path\tgithub.com/LAtanassov/go-online-sphinx/cmd/ossrv\nmod\tgithub.com/LAtanassov/go-online-sphinx\t(devel)\t\ndep\tgithub.com/go-kit/kit\tv0.7.0\th1:ApufNmWF1H6/wUbAG81hZOHmqwd0zRf8mNfLjYj/064=\ndep\tgithub.com/go-logfmt/logfmt\tv0.3.0\th1:8HUsc87TaSWLKwrnumgC8/YconD2fJQsRJAsWaPg2ic=\ndep\tgithub.com/go-stack/stack\tv1.8.0\th1:5SgMzNM5HxrEjV0ww2lTmX6E2Izsfxas4+YHWRs3Lsk=\ndep\tgithub.com/gorilla/mux\tv1.6.2\th1:Pgr17XVTNXAk3q/r4CpKzC5xBM/qW1uVLV+IhRZpIIk=\n\xf92C1\x86\x18 r\x00\x82B\x10A\x16\xd8\xf2" }
+cmd/ossrv/main.go:25:48: os.Stderr escapes to heap
+cmd/ossrv/main.go:25:48: 	from os.Stderr (passed to call[argument escapes]) at cmd/ossrv/main.go:25:48
+cmd/ossrv/main.go:25:30: "github.com/go-kit/kit/log".Logger(&"github.com/go-kit/kit/log".logfmtLogger literal) escapes to heap
+cmd/ossrv/main.go:25:30: 	from ~R0 (assign-pair) at cmd/ossrv/main.go:25:30
+cmd/ossrv/main.go:25:30: 	from logger (assigned) at cmd/ossrv/main.go:25:9
+cmd/ossrv/main.go:25:30: 	from logger (passed to call[argument escapes]) at cmd/ossrv/main.go:26:19
+cmd/ossrv/main.go:25:30: &"github.com/go-kit/kit/log".logfmtLogger literal escapes to heap
+cmd/ossrv/main.go:25:30: 	from "github.com/go-kit/kit/log".Logger(&"github.com/go-kit/kit/log".logfmtLogger literal) (interface-converted) at cmd/ossrv/main.go:25:30
+cmd/ossrv/main.go:25:30: 	from ~R0 (assign-pair) at cmd/ossrv/main.go:25:30
+cmd/ossrv/main.go:25:30: 	from logger (assigned) at cmd/ossrv/main.go:25:9
+cmd/ossrv/main.go:25:30: 	from logger (passed to call[argument escapes]) at cmd/ossrv/main.go:26:19
+cmd/ossrv/main.go:26:28: "ts" escapes to heap
+cmd/ossrv/main.go:26:28: 	from ... argument (arg to ...) at cmd/ossrv/main.go:26:19
+cmd/ossrv/main.go:26:28: 	from *(... argument) (indirection) at cmd/ossrv/main.go:26:19
+cmd/ossrv/main.go:26:28: 	from ... argument (passed to call[argument content escapes]) at cmd/ossrv/main.go:26:19
+cmd/ossrv/main.go:26:28: "github.com/go-kit/kit/log".DefaultTimestampUTC escapes to heap
+cmd/ossrv/main.go:26:28: 	from ... argument (arg to ...) at cmd/ossrv/main.go:26:19
+cmd/ossrv/main.go:26:28: 	from *(... argument) (indirection) at cmd/ossrv/main.go:26:19
+cmd/ossrv/main.go:26:28: 	from ... argument (passed to call[argument content escapes]) at cmd/ossrv/main.go:26:19
+cmd/ossrv/main.go:37:13: err escapes to heap
+cmd/ossrv/main.go:37:13: 	from logger.Log(err) (parameter to indirect call) at cmd/ossrv/main.go:37:13
+cmd/ossrv/main.go:43:13: err escapes to heap
+cmd/ossrv/main.go:43:13: 	from logger.Log(err) (parameter to indirect call) at cmd/ossrv/main.go:43:13
+cmd/ossrv/main.go:54:33: "component" escapes to heap
+cmd/ossrv/main.go:54:33: 	from ... argument (arg to ...) at cmd/ossrv/main.go:54:24
+cmd/ossrv/main.go:54:33: 	from *(... argument) (indirection) at cmd/ossrv/main.go:54:24
+cmd/ossrv/main.go:54:33: 	from ... argument (passed to call[argument content escapes]) at cmd/ossrv/main.go:54:24
+cmd/ossrv/main.go:54:46: "http" escapes to heap
+cmd/ossrv/main.go:54:46: 	from ... argument (arg to ...) at cmd/ossrv/main.go:54:24
+cmd/ossrv/main.go:54:46: 	from *(... argument) (indirection) at cmd/ossrv/main.go:54:24
+cmd/ossrv/main.go:54:46: 	from ... argument (passed to call[argument content escapes]) at cmd/ossrv/main.go:54:24
+cmd/ossrv/main.go:51:6: service.New(repo, cfg) escapes to heap
+cmd/ossrv/main.go:51:6: 	from svc (assigned) at cmd/ossrv/main.go:51:6
+cmd/ossrv/main.go:51:6: 	from svc (passed to call[argument escapes]) at cmd/ossrv/main.go:58:56
+cmd/ossrv/main.go:51:19: &service.OnlineSphinx literal escapes to heap
+cmd/ossrv/main.go:51:19: 	from ~R0 (assign-pair) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:51:19: 	from service.New(repo, cfg) (interface-converted) at cmd/ossrv/main.go:51:6
+cmd/ossrv/main.go:51:19: 	from svc (assigned) at cmd/ossrv/main.go:51:6
+cmd/ossrv/main.go:51:19: 	from svc (passed to call[argument escapes]) at cmd/ossrv/main.go:58:56
+cmd/ossrv/main.go:29:7: service.NewInMemoryUserRepository() escapes to heap
+cmd/ossrv/main.go:29:7: 	from repo (assigned) at cmd/ossrv/main.go:29:7
+cmd/ossrv/main.go:29:7: 	from service.repo (assign-pair) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:7: 	from &service.OnlineSphinx literal (struct literal element) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:7: 	from &service.OnlineSphinx literal (pointer literal) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:7: 	from ~R0 (assign-pair) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:7: 	from service.New(repo, cfg) (interface-converted) at cmd/ossrv/main.go:51:6
+cmd/ossrv/main.go:29:7: 	from svc (assigned) at cmd/ossrv/main.go:51:6
+cmd/ossrv/main.go:29:7: 	from svc (passed to call[argument escapes]) at cmd/ossrv/main.go:58:56
+cmd/ossrv/main.go:29:42: &service.UserRepository literal escapes to heap
+cmd/ossrv/main.go:29:42: 	from ~R0 (assign-pair) at cmd/ossrv/main.go:29:42
+cmd/ossrv/main.go:29:42: 	from service.NewInMemoryUserRepository() (interface-converted) at cmd/ossrv/main.go:29:7
+cmd/ossrv/main.go:29:42: 	from repo (assigned) at cmd/ossrv/main.go:29:7
+cmd/ossrv/main.go:29:42: 	from service.repo (assign-pair) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:42: 	from &service.OnlineSphinx literal (struct literal element) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:42: 	from &service.OnlineSphinx literal (pointer literal) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:42: 	from ~R0 (assign-pair) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:42: 	from service.New(repo, cfg) (interface-converted) at cmd/ossrv/main.go:51:6
+cmd/ossrv/main.go:29:42: 	from svc (assigned) at cmd/ossrv/main.go:51:6
+cmd/ossrv/main.go:29:42: 	from svc (passed to call[argument escapes]) at cmd/ossrv/main.go:58:56
+cmd/ossrv/main.go:29:42: make(map[string]service.User) escapes to heap
+cmd/ossrv/main.go:29:42: 	from &service.UserRepository literal (struct literal element) at cmd/ossrv/main.go:29:42
+cmd/ossrv/main.go:29:42: 	from &service.UserRepository literal (pointer literal) at cmd/ossrv/main.go:29:42
+cmd/ossrv/main.go:29:42: 	from ~R0 (assign-pair) at cmd/ossrv/main.go:29:42
+cmd/ossrv/main.go:29:42: 	from service.NewInMemoryUserRepository() (interface-converted) at cmd/ossrv/main.go:29:7
+cmd/ossrv/main.go:29:42: 	from repo (assigned) at cmd/ossrv/main.go:29:7
+cmd/ossrv/main.go:29:42: 	from service.repo (assign-pair) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:42: 	from &service.OnlineSphinx literal (struct literal element) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:42: 	from &service.OnlineSphinx literal (pointer literal) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:42: 	from ~R0 (assign-pair) at cmd/ossrv/main.go:51:19
+cmd/ossrv/main.go:29:42: 	from service.New(repo, cfg) (interface-converted) at cmd/ossrv/main.go:51:6
+cmd/ossrv/main.go:29:42: 	from svc (assigned) at cmd/ossrv/main.go:51:6
+cmd/ossrv/main.go:29:42: 	from svc (passed to call[argument escapes]) at cmd/ossrv/main.go:58:56
+cmd/ossrv/main.go:52:6: service.NewLoggingService(logger, svc) escapes to heap
+cmd/ossrv/main.go:52:6: 	from svc (assigned) at cmd/ossrv/main.go:52:6
+cmd/ossrv/main.go:52:6: 	from svc (passed to call[argument escapes]) at cmd/ossrv/main.go:58:56
+cmd/ossrv/main.go:52:33: &service.LoggingService literal escapes to heap
+cmd/ossrv/main.go:52:33: 	from ~R0 (assign-pair) at cmd/ossrv/main.go:52:33
+cmd/ossrv/main.go:52:33: 	from service.NewLoggingService(logger, svc) (interface-converted) at cmd/ossrv/main.go:52:6
+cmd/ossrv/main.go:52:33: 	from svc (assigned) at cmd/ossrv/main.go:52:6
+cmd/ossrv/main.go:52:33: 	from svc (passed to call[argument escapes]) at cmd/ossrv/main.go:58:56
+cmd/ossrv/main.go:56:25: new(http.ServeMux) escapes to heap
+cmd/ossrv/main.go:56:25: 	from ~R0 (assign-pair) at cmd/ossrv/main.go:56:25
+cmd/ossrv/main.go:56:25: 	from mux (assigned) at cmd/ossrv/main.go:56:6
+cmd/ossrv/main.go:56:25: 	from mux (passed to call[argument escapes]) at cmd/ossrv/main.go:58:12
+cmd/ossrv/main.go:64:44: mux escapes to heap
+cmd/ossrv/main.go:64:44: 	from mux (passed to call[argument escapes]) at cmd/ossrv/main.go:64:44
+cmd/ossrv/main.go:69:5: func literal escapes to heap
+cmd/ossrv/main.go:69:5: 	from .sink (assigned to top level variable) at <unknown line number>
+cmd/ossrv/main.go:69:5: func literal escapes to heap
+cmd/ossrv/main.go:69:5: 	from &(func literal) (address-of) at cmd/ossrv/main.go:69:5
+cmd/ossrv/main.go:69:5: 	from .sink (assigned to top level variable) at <unknown line number>
+cmd/ossrv/main.go:68:14: make(chan error, 2) escapes to heap
+cmd/ossrv/main.go:68:14: 	from errs (assigned) at cmd/ossrv/main.go:68:7
+cmd/ossrv/main.go:68:14: 	from func literal (captured by a closure) at cmd/ossrv/main.go:69:5
+cmd/ossrv/main.go:68:14: 	from &(func literal) (address-of) at cmd/ossrv/main.go:69:5
+cmd/ossrv/main.go:68:14: 	from .sink (assigned to top level variable) at <unknown line number>
+cmd/ossrv/main.go:73:5: func literal escapes to heap
+cmd/ossrv/main.go:73:5: 	from .sink (assigned to top level variable) at <unknown line number>
+cmd/ossrv/main.go:73:5: func literal escapes to heap
+cmd/ossrv/main.go:73:5: 	from &(func literal) (address-of) at cmd/ossrv/main.go:73:5
+cmd/ossrv/main.go:73:5: 	from .sink (assigned to top level variable) at <unknown line number>
+cmd/ossrv/main.go:79:13: "terminated" escapes to heap
+cmd/ossrv/main.go:79:13: 	from logger.Log("terminated", <-errs) (parameter to indirect call) at cmd/ossrv/main.go:79:12
+cmd/ossrv/main.go:79:27: <-errs escapes to heap
+cmd/ossrv/main.go:79:27: 	from logger.Log("terminated", <-errs) (parameter to indirect call) at cmd/ossrv/main.go:79:12
+cmd/ossrv/main.go:70:14: "transport" escapes to heap
+cmd/ossrv/main.go:70:14: 	from logger.Log("transport", "http", "address", *httpAddr, "msg", "listening") (parameter to indirect call) at cmd/ossrv/main.go:70:13
+cmd/ossrv/main.go:70:27: "http" escapes to heap
+cmd/ossrv/main.go:70:27: 	from logger.Log("transport", "http", "address", *httpAddr, "msg", "listening") (parameter to indirect call) at cmd/ossrv/main.go:70:13
+cmd/ossrv/main.go:70:35: "address" escapes to heap
+cmd/ossrv/main.go:70:35: 	from logger.Log("transport", "http", "address", *httpAddr, "msg", "listening") (parameter to indirect call) at cmd/ossrv/main.go:70:13
+cmd/ossrv/main.go:70:46: *httpAddr escapes to heap
+cmd/ossrv/main.go:70:46: 	from logger.Log("transport", "http", "address", *httpAddr, "msg", "listening") (parameter to indirect call) at cmd/ossrv/main.go:70:13
+cmd/ossrv/main.go:70:57: "msg" escapes to heap
+cmd/ossrv/main.go:70:57: 	from logger.Log("transport", "http", "address", *httpAddr, "msg", "listening") (parameter to indirect call) at cmd/ossrv/main.go:70:13
+cmd/ossrv/main.go:70:64: "listening" escapes to heap
+cmd/ossrv/main.go:70:64: 	from logger.Log("transport", "http", "address", *httpAddr, "msg", "listening") (parameter to indirect call) at cmd/ossrv/main.go:70:13
+cmd/ossrv/main.go:70:3: leaking closure reference logger
+cmd/ossrv/main.go:70:3: 	from logger.Log("transport", "http", "address", *httpAddr, "msg", "listening") (receiver in indirect call) at cmd/ossrv/main.go:70:13
+cmd/ossrv/main.go:74:12: make(chan os.Signal) escapes to heap
+cmd/ossrv/main.go:74:12: 	from c (assigned) at cmd/ossrv/main.go:74:5
+cmd/ossrv/main.go:74:12: 	from c (passed to call[argument escapes]) at cmd/ossrv/main.go:75:16
+cmd/ossrv/main.go:76:28: <-c escapes to heap
+cmd/ossrv/main.go:76:28: 	from ... argument (arg to ...) at cmd/ossrv/main.go:76:21
+cmd/ossrv/main.go:76:28: 	from *(... argument) (indirection) at cmd/ossrv/main.go:76:21
+cmd/ossrv/main.go:76:28: 	from ... argument (passed to call[argument content escapes]) at cmd/ossrv/main.go:76:21
+cmd/ossrv/main.go:26:19: main ... argument does not escape
+cmd/ossrv/main.go:32:12: main new(big.Int) does not escape
+cmd/ossrv/main.go:54:24: main ... argument does not escape
+cmd/ossrv/main.go:75:16: main.func2 syscall.SIGINT does not escape
+cmd/ossrv/main.go:75:16: main.func2 ... argument does not escape
+cmd/ossrv/main.go:76:21: main.func2 ... argument does not escape
+<autogenerated>:1: os.(*File).close .this does not escape
+/home/latanassov/git/go-online-sphinx/pkg/service/service.go:24: leaking param: service.cID
+/home/latanassov/git/go-online-sphinx/pkg/service/service.go:24: 	from .this.Service.GetMetadata(service.cID, service.mac) (parameter to indirect call) at <autogenerated>:1
+/home/latanassov/git/go-online-sphinx/pkg/service/service.go:24: leaking param: service.mac
+/home/latanassov/git/go-online-sphinx/pkg/service/service.go:24: 	from .this.Service.GetMetadata(service.cID, service.mac) (parameter to indirect call) at <autogenerated>:1
+<autogenerated>:1: leaking param content: .this
+<autogenerated>:1: 	from .this.Service (dot of pointer) at <autogenerated>:1
+<autogenerated>:1: 	from .this.Service.GetMetadata(service.cID, service.mac) (receiver in indirect call) at <autogenerated>:1

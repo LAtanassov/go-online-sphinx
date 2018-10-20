@@ -1,0 +1,1368 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/LAtanassov/go-online-sphinx/pkg/client/client.go (73.2%)</option>
+				
+				<option value="file1">github.com/LAtanassov/go-online-sphinx/pkg/client/configuration.go (100.0%)</option>
+				
+				<option value="file2">github.com/LAtanassov/go-online-sphinx/pkg/client/domain.go (100.0%)</option>
+				
+				<option value="file3">github.com/LAtanassov/go-online-sphinx/pkg/client/transport.go (82.9%)</option>
+				
+				<option value="file4">github.com/LAtanassov/go-online-sphinx/pkg/crypto/crypto.go (69.2%)</option>
+				
+				<option value="file5">github.com/LAtanassov/go-online-sphinx/pkg/service/domain.go (0.0%)</option>
+				
+				<option value="file6">github.com/LAtanassov/go-online-sphinx/pkg/service/endpoint.go (0.0%)</option>
+				
+				<option value="file7">github.com/LAtanassov/go-online-sphinx/pkg/service/logging.go (0.0%)</option>
+				
+				<option value="file8">github.com/LAtanassov/go-online-sphinx/pkg/service/repository.go (100.0%)</option>
+				
+				<option value="file9">github.com/LAtanassov/go-online-sphinx/pkg/service/service.go (88.9%)</option>
+				
+				<option value="file10">github.com/LAtanassov/go-online-sphinx/pkg/service/transport.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package client
+
+import (
+        "bytes"
+        "crypto/rand"
+        "encoding/hex"
+        "errors"
+        "io"
+        "math/big"
+        "net/http"
+
+        "github.com/LAtanassov/go-online-sphinx/pkg/crypto"
+)
+
+// ErrRegistrationFailed ...
+var ErrRegistrationFailed = errors.New("registration failed")
+
+// ErrAuthenticationFailed ...
+var ErrAuthenticationFailed = errors.New("authentication failed")
+
+// Client represents an Online SPHINX Client
+type Client struct {
+        poster  Poster
+        config  Configuration
+        repo    Repository
+        session *Session
+}
+
+// Poster provides a Post operation used e.g. http.DefaultClient
+type Poster interface {
+        Post(url, contentType string, body io.Reader) (resp *http.Response, err error)
+}
+
+// Repository provides a basic user configuration repository interface
+type Repository interface {
+        Add(u User) error
+        Get(username string) (User, error)
+}
+
+// New creates a new Online SPHINX Client.
+func New(pst Poster, cfg Configuration, repo Repository) *Client <span class="cov8" title="1">{
+        return &amp;Client{
+                poster: pst,
+                config: cfg,
+                repo:   repo,
+        }
+}</span>
+
+// Register will register a new user.
+func (clt *Client) Register(username string) error <span class="cov8" title="1">{
+
+        user, err := NewUser(username)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // TODO: later on registration might fail
+        <span class="cov8" title="1">err = clt.repo.Add(user)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">buf, err := marshalRegisterRequest(username)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">r, err := clt.poster.Post(clt.config.registerPath, clt.config.contentType, bytes.NewBuffer(buf))
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if r.StatusCode != http.StatusCreated </span><span class="cov0" title="0">{
+                return ErrRegistrationFailed
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Login runs the Online SPHINX login protocol
+func (clt *Client) Login(username, pwd string) error <span class="cov8" title="1">{
+
+        user, err := clt.repo.Get(username)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">g := crypto.HashInGroup(pwd, clt.config.hash, user.q)
+        cNonce, b, kinv, err := crypto.Blind(g, user.q, clt.config.bits)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">buf, err := marshalExpKRequest(user.cID, cNonce, b, user.q)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">r, err := clt.poster.Post(clt.config.expkPath, clt.config.contentType, bytes.NewBuffer(buf))
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">sID, sNonce, bd, kv, q0, err := unmarsalExpKResponse(r.Body)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer r.Body.Close()
+
+        B0 := crypto.Unblind(bd, kinv, user.q)
+        SKi := new(big.Int)
+        SKi.SetBytes(crypto.HmacData(clt.config.hash, kv.Bytes(), user.cID.Bytes(), sID.Bytes(), cNonce.Bytes(), sNonce.Bytes()))
+        mk := new(big.Int)
+        mk.Mul(crypto.ExpInGroup(B0, user.k, user.q), q0)
+
+        clt.session = NewSession(user, sID, SKi, mk)
+
+        return nil</span>
+}
+
+// Verify session key SKi
+func (clt *Client) Verify() error <span class="cov8" title="1">{
+
+        if clt.session == nil </span><span class="cov0" title="0">{
+                return ErrAuthenticationFailed
+        }</span>
+
+        <span class="cov8" title="1">g, err := rand.Int(rand.Reader, clt.session.user.q)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">challenge, err := marshalVerifyRequest(g, clt.session.user.q)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">r, err := clt.poster.Post(clt.config.verifyPath, clt.config.contentType, bytes.NewBuffer(challenge))
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">response, err := unmarsalVerifyResponse(r.Body)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer r.Body.Close()
+
+        verifier := crypto.ExpInGroup(g, clt.session.ski, clt.session.user.q)
+        if response.Cmp(verifier) != 0 </span><span class="cov8" title="1">{
+                return ErrAuthenticationFailed
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// GetMetadata ...
+func (clt *Client) GetMetadata() ([]Domain, error) <span class="cov8" title="1">{
+
+        mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), clt.session.user.cID.Bytes(), clt.session.sID.Bytes())
+        req, err := marshalMetadataRequest(clt.session.user.cID.Text(16), hex.EncodeToString(mac))
+
+        r, err := clt.poster.Post(clt.config.metadataPath, clt.config.contentType, bytes.NewBuffer(req))
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">domains, err := unmarsalMetadataResponse(r.Body)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer r.Body.Close()
+
+        return domains, nil</span>
+}
+
+// Add ...
+func (clt *Client) Add() error <span class="cov0" title="0">{
+        return nil
+}</span>
+
+// Get ...
+func (clt *Client) Get() error <span class="cov0" title="0">{
+        return nil
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package client
+
+import (
+        "crypto/sha256"
+        "errors"
+        "hash"
+        "math/big"
+        "sync"
+)
+
+// ErrUserAlreadyExists in repostory already
+var ErrUserAlreadyExists = errors.New("user already exists")
+
+// ErrUserNotFound in repostory
+var ErrUserNotFound = errors.New("user not found")
+
+// User specific configuration contains
+// a client ID and important login-specific variables like prime q and secret k.
+type User struct {
+        username string
+        cID      *big.Int
+        q        *big.Int
+        k        *big.Int
+}
+
+// NewUser generates new user with username.
+func NewUser(username string) (User, error) <span class="cov8" title="1">{
+        // TODO: generate keys here
+        return User{
+                username: username,
+                cID:      big.NewInt(42),
+                k:        big.NewInt(42),
+                q:        big.NewInt(42),
+        }, nil
+}</span>
+
+// Configuration ...
+type Configuration struct {
+        hash         func() hash.Hash
+        bits         *big.Int
+        contentType  string
+        baseURL      string
+        registerPath string
+        expkPath     string
+        verifyPath   string
+        metadataPath string
+}
+
+// NewConfiguration return default configuration.
+func NewConfiguration() Configuration <span class="cov8" title="1">{
+        return Configuration{
+                hash: sha256.New,
+                bits: big.NewInt(8),
+        }
+}</span>
+
+// UserRepository contains user specific configuration.
+// Adds new user to the repository when registered.
+// Load existing user from the repository before the login process.
+// UserRepository SHOULD be able to store this configuration as file ,
+// so that users can easily copy and transfer those files.
+// client.UserRepository is atm identical with server.UserRepository, but this might change in future
+type UserRepository struct {
+        mutex sync.Mutex
+        users map[string]User
+}
+
+// NewInMemoryUserRepository return an in memory UserRepository.
+// using pointer semantic allocated in heap once for sharing
+func NewInMemoryUserRepository() *UserRepository <span class="cov8" title="1">{
+        return &amp;UserRepository{
+                mutex: sync.Mutex{},
+                users: make(map[string]User),
+        }
+}</span>
+
+// Add new user to user repository if does not exists
+func (r *UserRepository) Add(u User) error <span class="cov8" title="1">{
+        r.mutex.Lock()
+        defer r.mutex.Unlock()
+
+        _, ok := r.users[u.username]
+        if ok </span><span class="cov8" title="1">{
+                return ErrUserAlreadyExists
+        }</span>
+
+        <span class="cov8" title="1">r.users[u.username] = u
+        return nil</span>
+}
+
+// Get an existing user
+func (r *UserRepository) Get(username string) (User, error) <span class="cov8" title="1">{
+        r.mutex.Lock()
+        defer r.mutex.Unlock()
+
+        u, ok := r.users[username]
+        if !ok </span><span class="cov8" title="1">{
+                return User{}, ErrUserNotFound
+        }</span>
+        <span class="cov8" title="1">return u, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package client
+
+import (
+        "math/big"
+)
+
+// Domain ...
+type Domain struct {
+}
+
+// Session ...
+type Session struct {
+        ski  *big.Int
+        mk   *big.Int
+        sID  *big.Int
+        user User
+}
+
+// NewSession ...
+func NewSession(user User, sID, ski, mk *big.Int) *Session <span class="cov8" title="1">{
+        return &amp;Session{
+                ski:  ski,
+                mk:   mk,
+                sID:  sID,
+                user: user,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package client
+
+import (
+        "encoding/json"
+        "io"
+        "math/big"
+)
+
+type registerRequest struct {
+        Username string `json:"username"`
+}
+
+type expKRequest struct {
+        CID    string `json:"cID"`
+        CNonce string `json:"cNonce"`
+        B      string `json:"b"`
+        Q      string `json:"q"`
+}
+
+type expKResponse struct {
+        SID    string `json:"sID"`
+        SNonce string `json:"sNonce"`
+        BD     string `json:"bd"`
+        Q0     string `json:"Q0"`
+        KV     string `json:"kv"`
+        Err    error  `json:"error"`
+}
+
+type verifyRequest struct {
+        G string `json:"g"`
+        Q string `json:"q"`
+}
+
+type verifyResponse struct {
+        R   string `json:"r"`
+        Err error  `json:"error"`
+}
+
+type metadataRequest struct {
+        CID string `json:"cID"`
+        MAC string `json:"mac"`
+}
+
+type metadataResponse struct {
+        Domains []Domain `json:"domains"`
+        Err     error    `json:"error"`
+}
+
+func marshalRegisterRequest(username string) ([]byte, error) <span class="cov8" title="1">{
+        return json.Marshal(&amp;registerRequest{Username: username})
+}</span>
+
+func marshalExpKRequest(cID, cNonce, b, q *big.Int) ([]byte, error) <span class="cov8" title="1">{
+        return json.Marshal(&amp;expKRequest{
+                CID:    cID.Text(16),
+                CNonce: cNonce.Text(16),
+                B:      b.Text(16),
+                Q:      q.Text(16),
+        })
+}</span>
+
+func unmarsalExpKResponse(r io.Reader) (sID, sNonce, bd, kv, q0 *big.Int, err error) <span class="cov8" title="1">{
+
+        resp := expKResponse{}
+        err = json.NewDecoder(r).Decode(&amp;resp)
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+
+        <span class="cov8" title="1">if resp.Err != nil </span><span class="cov0" title="0">{
+                err = resp.Err
+                return
+        }</span>
+
+        <span class="cov8" title="1">bd = new(big.Int)
+        bd.SetString(resp.BD, 16)
+
+        q0 = new(big.Int)
+        q0.SetString(resp.Q0, 16)
+
+        kv = new(big.Int)
+        kv.SetString(resp.KV, 16)
+
+        sID = new(big.Int)
+        sID.SetString(resp.SID, 16)
+
+        sNonce = new(big.Int)
+        sNonce.SetString(resp.SNonce, 16)
+        return</span>
+}
+
+func marshalExpKResponse(sID, sNonce, bd, kv, q0 *big.Int) ([]byte, error) <span class="cov8" title="1">{
+        return json.Marshal(&amp;expKResponse{
+                SID:    sID.Text(16),
+                SNonce: sNonce.Text(16),
+                BD:     bd.Text(16),
+                KV:     kv.Text(16),
+                Q0:     q0.Text(16),
+        })
+}</span>
+
+func marshalVerifyRequest(g, q *big.Int) ([]byte, error) <span class="cov8" title="1">{
+        return json.Marshal(&amp;verifyRequest{
+                G: g.Text(16),
+                Q: q.Text(16),
+        })
+}</span>
+
+func marshalVerifyResponse(r *big.Int, err error) ([]byte, error) <span class="cov8" title="1">{
+        return json.Marshal(&amp;verifyResponse{
+                R:   r.Text(16),
+                Err: err,
+        })
+}</span>
+
+func unmarsalVerifyResponse(rd io.Reader) (*big.Int, error) <span class="cov8" title="1">{
+
+        resp := verifyResponse{}
+        err := json.NewDecoder(rd).Decode(&amp;resp)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">if resp.Err != nil </span><span class="cov0" title="0">{
+                return nil, resp.Err
+        }</span>
+
+        <span class="cov8" title="1">r := new(big.Int)
+        r.SetString(resp.R, 16)
+
+        return r, nil</span>
+}
+
+func marshalMetadataRequest(cID, mac string) ([]byte, error) <span class="cov8" title="1">{
+        return json.Marshal(&amp;metadataRequest{
+                CID: cID,
+                MAC: mac,
+        })
+}</span>
+
+func marshalMetadataResponse(domains []Domain, err error) ([]byte, error) <span class="cov8" title="1">{
+        return json.Marshal(&amp;metadataResponse{
+                Domains: domains,
+                Err:     err,
+        })
+}</span>
+
+func unmarsalMetadataResponse(r io.Reader) ([]Domain, error) <span class="cov8" title="1">{
+
+        resp := metadataResponse{}
+        err := json.NewDecoder(r).Decode(&amp;resp)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">if resp.Err != nil </span><span class="cov0" title="0">{
+                return nil, resp.Err
+        }</span>
+
+        <span class="cov8" title="1">return resp.Domains, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package crypto
+
+import (
+        "crypto/hmac"
+        "crypto/rand"
+        "hash"
+        "math/big"
+)
+
+var one = big.NewInt(1)
+var two = big.NewInt(2)
+
+// ExpInGroup - exponential in cyclic group returns g**k mod |2*q + 1|
+func ExpInGroup(g, k, q *big.Int) *big.Int <span class="cov8" title="1">{
+        var p = big.NewInt(0)
+        var r = big.NewInt(0)
+
+        p.Add(p.Mul(two, q), one)
+
+        return r.Exp(g, k, p)
+}</span>
+
+// HashInGroup takes an arbitrary string transform into a group element
+func HashInGroup(password string, newHash func() hash.Hash, q *big.Int) *big.Int <span class="cov8" title="1">{
+        p := new(big.Int)
+        p.SetBytes(newHash().Sum([]byte(password)))
+
+        return ExpInGroup(p, two, q)
+}</span>
+
+// Blind ...
+func Blind(g, q, bits *big.Int) (cNonce, b, kinv *big.Int, err error) <span class="cov8" title="1">{
+
+        max := new(big.Int)
+        max.Exp(two, bits, nil)
+
+        cNonce, err = rand.Int(rand.Reader, q)
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+
+        <span class="cov8" title="1">k, err := rand.Int(rand.Reader, q)
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+
+        <span class="cov8" title="1">kinv = new(big.Int)
+        kinv.ModInverse(k, q)
+
+        if kinv == nil </span><span class="cov0" title="0">{
+                kinv = big.NewInt(0)
+        }</span>
+
+        <span class="cov8" title="1">b = ExpInGroup(g, k, q)
+        return</span>
+}
+
+// Unblind wraps ExpInGroup for readibility
+func Unblind(bd, kinv, q *big.Int) *big.Int <span class="cov0" title="0">{
+        return ExpInGroup(bd, kinv, q)
+}</span>
+
+// HmacData ...
+func HmacData(h func() hash.Hash, key []byte, data ...[]byte) []byte <span class="cov0" title="0">{
+        mac := hmac.New(h, key)
+        for _, d := range data </span><span class="cov0" title="0">{
+                mac.Write(d)
+        }</span>
+
+        <span class="cov0" title="0">return mac.Sum(nil)</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package service
+
+import (
+        "hash"
+        "math/big"
+)
+
+// Configuration ...
+type Configuration struct {
+        sID *big.Int
+
+        k  *big.Int
+        q0 *big.Int
+
+        hash func() hash.Hash
+        bits *big.Int
+}
+
+// NewConfiguration ...
+func NewConfiguration(sID, k, q0, bits *big.Int, hash func() hash.Hash) Configuration <span class="cov0" title="0">{
+        return Configuration{
+                sID:  sID,
+                k:    k,
+                q0:   q0,
+                bits: bits,
+                hash: hash,
+        }
+}</span>
+
+// Domain ...
+type Domain struct {
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package service
+
+import (
+        "context"
+        "math/big"
+
+        "github.com/go-kit/kit/endpoint"
+)
+
+type expKRequest struct {
+        cID    *big.Int
+        cNonce *big.Int
+        b      *big.Int
+        q      *big.Int
+}
+
+type expKResponse struct {
+        sID    *big.Int
+        sNonce *big.Int
+        bd     *big.Int
+        q0     *big.Int
+        kv     *big.Int
+        Err    error
+}
+
+func (r expKResponse) error() error <span class="cov0" title="0">{ return r.Err }</span>
+
+func makeExpKEndpoint(s Service) endpoint.Endpoint <span class="cov0" title="0">{
+        return func(ctx context.Context, request interface{}) (interface{}, error) </span><span class="cov0" title="0">{
+                req := request.(expKRequest)
+
+                sID, sNonce, bd, q0, kv, err := s.ExpK(req.cID, req.cNonce, req.b, req.q)
+                return expKResponse{sID: sID, sNonce: sNonce, bd: bd, q0: q0, kv: kv, Err: err}, nil
+        }</span>
+}
+
+type registerRequest struct {
+        cID *big.Int
+}
+
+type registerResponse struct {
+        Err error `json:"error,omitempty"`
+}
+
+func makeRegisterEndpoint(s Service) endpoint.Endpoint <span class="cov0" title="0">{
+        return func(ctx context.Context, request interface{}) (interface{}, error) </span><span class="cov0" title="0">{
+                req := request.(registerRequest)
+                err := s.Register(req.cID)
+                return registerResponse{Err: err}, nil
+        }</span>
+}
+
+type verifyRequest struct {
+        g *big.Int
+        q *big.Int
+}
+
+type verifyResponse struct {
+        r   *big.Int
+        Err error `json:"error,omitempty"`
+}
+
+type metadataRequest struct {
+        cID *big.Int
+        mac []byte
+}
+
+type metadataResponse struct {
+        domains []Domain
+        Err     error `json:"error,omitempty"`
+}
+
+func makeVerifyEndpoint(s Service) endpoint.Endpoint <span class="cov0" title="0">{
+        return func(ctx context.Context, request interface{}) (interface{}, error) </span><span class="cov0" title="0">{
+                req := request.(verifyRequest)
+                r, err := s.Verify(req.g, req.q)
+                return verifyResponse{r: r, Err: err}, nil
+        }</span>
+}
+
+func makeMetadataEndpoint(s Service) endpoint.Endpoint <span class="cov0" title="0">{
+        return func(ctx context.Context, request interface{}) (interface{}, error) </span><span class="cov0" title="0">{
+                req := request.(metadataRequest)
+                domains, err := s.GetMetadata(req.cID, req.mac)
+                return metadataResponse{domains: domains, Err: err}, nil
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package service
+
+import (
+        "math/big"
+        "time"
+
+        "github.com/go-kit/kit/log"
+)
+
+// LoggingService wraps around a Service interface
+type LoggingService struct {
+        logger log.Logger
+        Service
+}
+
+// NewLoggingService returns a new instance of a logging Service.
+func NewLoggingService(logger log.Logger, s Service) *LoggingService <span class="cov0" title="0">{
+        return &amp;LoggingService{logger, s}
+}</span>
+
+// Register wraps service.Register and writes log msg
+func (s *LoggingService) Register(cID *big.Int) (err error) <span class="cov0" title="0">{
+        defer func(begin time.Time) </span><span class="cov0" title="0">{
+                s.logger.Log(
+                        "method", "Register",
+                        "took", time.Since(begin),
+
+                        "cID", cID,
+
+                        "err", err,
+                )
+        }</span>(time.Now())
+
+        <span class="cov0" title="0">return s.Service.Register(cID)</span>
+}
+
+// ExpK wraps service.ExpK and writes log msg
+func (s *LoggingService) ExpK(cID, cNonce, b, q *big.Int) (sID, sNonce, bd, q0, kv *big.Int, err error) <span class="cov0" title="0">{
+        defer func(begin time.Time) </span><span class="cov0" title="0">{
+                s.logger.Log(
+                        "method", "ExpK",
+                        "took", time.Since(begin),
+
+                        "cID", cID.Text(16),
+                        "b", b.Text(16),
+                        "q", q.Text(16),
+
+                        "sID", sID,
+                        "sNonce", sNonce.Text(16),
+                        "bd", bd.Text(16),
+                        "q0", q0.Text(16),
+                        "kv", kv.Text(16),
+
+                        "err", err,
+                )
+        }</span>(time.Now())
+
+        <span class="cov0" title="0">return s.Service.ExpK(cID, cNonce, b, q)</span>
+}
+
+// Verify wraps service.Verify and writes log msg
+func (s *LoggingService) Verify(g, q *big.Int) (r *big.Int, err error) <span class="cov0" title="0">{
+        defer func(begin time.Time) </span><span class="cov0" title="0">{
+                s.logger.Log(
+                        "method", "Verify",
+                        "took", time.Since(begin),
+
+                        "err", err,
+                )
+        }</span>(time.Now())
+
+        <span class="cov0" title="0">return s.Service.Verify(g, q)</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package service
+
+import (
+        "errors"
+        "math/big"
+        "sync"
+)
+
+// ErrUserAlreadyExists in repostory already
+var ErrUserAlreadyExists = errors.New("user already exists")
+
+// ErrUserNotFound in repostory
+var ErrUserNotFound = errors.New("user not found")
+
+// User is an entity and contains all user related informated to implement server-side Online SPHINX.
+type User struct {
+        cID   *big.Int
+        kv    *big.Int
+        store map[string]Vault
+}
+
+// UserRepository provides an user repository.
+// This repository can also be implemented using an SQL database.UserRepository.
+// It should be store for long term (replicated, shared).
+// client.UserRepository is atm identical with server.UserRepository, but this might change in future
+type UserRepository struct {
+        mutex sync.Mutex
+        users map[string]User
+}
+
+// NewInMemoryUserRepository creates and returns an inmemory user repository.
+func NewInMemoryUserRepository() *UserRepository <span class="cov8" title="1">{
+        return &amp;UserRepository{
+                mutex: sync.Mutex{},
+                users: make(map[string]User),
+        }
+}</span>
+
+// Add new user to user repository if does not exists
+func (r *UserRepository) Add(u User) error <span class="cov8" title="1">{
+        r.mutex.Lock()
+        defer r.mutex.Unlock()
+
+        _, ok := r.users[u.cID.Text(16)]
+        if ok </span><span class="cov8" title="1">{
+                return ErrUserAlreadyExists
+        }</span>
+
+        <span class="cov8" title="1">r.users[u.cID.Text(16)] = u
+        return nil</span>
+}
+
+// Get an existing user
+func (r *UserRepository) Get(cID string) (User, error) <span class="cov8" title="1">{
+        r.mutex.Lock()
+        defer r.mutex.Unlock()
+
+        u, ok := r.users[cID]
+        if !ok </span><span class="cov8" title="1">{
+                return User{}, ErrUserNotFound
+        }</span>
+        <span class="cov8" title="1">return u, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package service
+
+import (
+        "crypto/rand"
+        "errors"
+        "math/big"
+        "os"
+
+        "github.com/LAtanassov/go-online-sphinx/pkg/crypto"
+)
+
+// ErrInvalidArgument is returned when an invalid argument was passed.
+var ErrInvalidArgument = errors.New("invalid arguments")
+
+var one = big.NewInt(1)
+var two = big.NewInt(2)
+
+// Service represents the interface provided to other layers.
+type Service interface {
+        Register(cID *big.Int) error
+        ExpK(cID, cNonce, b, q *big.Int) (sID, sNonce, bd, q0, kv *big.Int, err error)
+        Verify(g, q *big.Int) (r *big.Int, err error)
+
+        GetMetadata(cID *big.Int, mac []byte) (domains []Domain, err error)
+
+        //AddVault(u string) (err error)
+        //GetVault(u string, bmk *big.Int) (bj, qj *big.Int, err error)
+}
+
+// Repository represents a store for user management - need to be implemented
+type Repository interface {
+        Add(u User) error
+        Get(ID string) (User, error)
+}
+
+// Vault ...
+type Vault struct {
+        k *big.Int
+        q *big.Int
+}
+
+// OnlineSphinx provides all operations needed.
+type OnlineSphinx struct {
+        repo   Repository
+        config Configuration
+}
+
+// New returns an Online SPHINX service - to share - pointer.
+func New(repo Repository, cfg Configuration) *OnlineSphinx <span class="cov8" title="1">{
+        return &amp;OnlineSphinx{
+                repo:   repo,
+                config: cfg,
+        }
+}</span>
+
+// Register an user with its id
+func (o *OnlineSphinx) Register(cID *big.Int) error <span class="cov8" title="1">{
+        max := new(big.Int)
+        max.Exp(two, o.config.bits, nil)
+
+        kv, err := rand.Int(rand.Reader, max)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return o.repo.Add(User{cID: cID, kv: kv})</span>
+}
+
+// ExpK returns r**k mod |2q + 1|
+func (o *OnlineSphinx) ExpK(cID, cNonce, b, q *big.Int) (sID, sNonce, bd, q0, kv *big.Int, err error) <span class="cov8" title="1">{
+        sID = o.config.sID
+        q0 = o.config.q0
+
+        bd = crypto.ExpInGroup(b, o.config.k, q)
+
+        max := new(big.Int)
+        max.Exp(two, o.config.bits, nil)
+
+        sNonce, err = rand.Int(rand.Reader, max)
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+
+        <span class="cov8" title="1">u, err := o.repo.Get(cID.Text(16))
+        if err != nil </span><span class="cov8" title="1">{
+                return
+        }</span>
+        <span class="cov8" title="1">kv = u.kv
+
+        SKi := new(big.Int)
+        SKi.SetBytes(crypto.HmacData(o.config.hash, kv.Bytes(), cID.Bytes(), sID.Bytes(), cNonce.Bytes(), sNonce.Bytes()))
+
+        os.Setenv("SKi", SKi.Text(16))
+
+        return</span>
+}
+
+// Verify decrypts the vNonce, increments it and encrypts it again.
+func (o *OnlineSphinx) Verify(g, q *big.Int) (r *big.Int, err error) <span class="cov8" title="1">{
+
+        SKi := new(big.Int)
+        SKi.SetString(os.Getenv("SKi"), 16)
+
+        return crypto.ExpInGroup(g, SKi, q), nil
+}</span>
+
+func (o *OnlineSphinx) GetMetadata(cID *big.Int, mac []byte) (domains []Domain, err error) <span class="cov0" title="0">{
+        return nil, nil
+}</span>
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package service
+
+import (
+        "context"
+        "encoding/hex"
+        "encoding/json"
+        "errors"
+        "math/big"
+        "net/http"
+
+        "github.com/gorilla/mux"
+
+        kitlog "github.com/go-kit/kit/log"
+        kithttp "github.com/go-kit/kit/transport/http"
+)
+
+// ErrUnexpectedType is returned after a type cast failed.
+var ErrUnexpectedType = errors.New("unexpected type")
+
+// MakeRegisterHandler returns a handler
+func MakeRegisterHandler(s Service, logger kitlog.Logger) http.Handler <span class="cov0" title="0">{
+        r := mux.NewRouter()
+
+        opts := []kithttp.ServerOption{
+                kithttp.ServerErrorLogger(logger),
+                kithttp.ServerErrorEncoder(encodeError),
+        }
+
+        registerHandler := kithttp.NewServer(
+                makeRegisterEndpoint(s),
+                decodeRegisterRequest,
+                encodeResponse,
+                opts...,
+        )
+
+        r.Handle("/v1/register", registerHandler).Methods("POST")
+
+        return r
+}</span>
+
+// MakeExpKHandler returns a handler for the handling service.
+func MakeExpKHandler(s Service, logger kitlog.Logger) http.Handler <span class="cov0" title="0">{
+        r := mux.NewRouter()
+
+        opts := []kithttp.ServerOption{
+                kithttp.ServerErrorLogger(logger),
+                kithttp.ServerErrorEncoder(encodeError),
+        }
+
+        expKHandler := kithttp.NewServer(
+                makeExpKEndpoint(s),
+                decodeExpKRequest,
+                encodeExpKResponse,
+                opts...,
+        )
+
+        r.Handle("/v1/login/expk", expKHandler).Methods("POST")
+
+        return r
+}</span>
+
+// MakeVerifyHandler returns a handler for the handling service.
+func MakeVerifyHandler(s Service, logger kitlog.Logger) http.Handler <span class="cov0" title="0">{
+        r := mux.NewRouter()
+
+        opts := []kithttp.ServerOption{
+                kithttp.ServerErrorLogger(logger),
+                kithttp.ServerErrorEncoder(encodeError),
+        }
+
+        verifyHandler := kithttp.NewServer(
+                makeVerifyEndpoint(s),
+                decodeVerifyRequest,
+                encodeVerifyResponse,
+                opts...,
+        )
+
+        r.Handle("/v1/login/verify", verifyHandler).Methods("POST")
+
+        return r
+}</span>
+
+// MakeMetadataHandler ...
+func MakeMetadataHandler(s Service, logger kitlog.Logger) http.Handler <span class="cov0" title="0">{
+        r := mux.NewRouter()
+
+        opts := []kithttp.ServerOption{
+                kithttp.ServerErrorLogger(logger),
+                kithttp.ServerErrorEncoder(encodeError),
+        }
+
+        metadataHandler := kithttp.NewServer(
+                makeMetadataEndpoint(s),
+                decodeMetadataRequest,
+                encodeMetadataResponse,
+                opts...,
+        )
+
+        r.Handle("/v1/metadata", metadataHandler).Methods("POST")
+
+        return r
+}</span>
+
+// MakeAccessControl sets Header for access control
+func MakeAccessControl(h http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                w.Header().Set("Access-Control-Allow-Origin", "*")
+                w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type")
+
+                if r.Method == "OPTIONS" </span><span class="cov0" title="0">{
+                        return
+                }</span>
+
+                <span class="cov0" title="0">h.ServeHTTP(w, r)</span>
+        })
+}
+
+// MakeLivenessHandler returns liveness handler
+func MakeLivenessHandler() http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                w.WriteHeader(200)
+                w.Write([]byte("ok"))
+        }</span>)
+}
+
+// MakeReadinessHandler return readiness handler
+func MakeReadinessHandler() http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                w.WriteHeader(200)
+                w.Write([]byte("ok"))
+        }</span>)
+}
+
+func decodeRegisterRequest(_ context.Context, r *http.Request) (interface{}, error) <span class="cov0" title="0">{
+        var body struct {
+                CID string `json:"CID"`
+        }
+
+        if err := json.NewDecoder(r.Body).Decode(&amp;body); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer r.Body.Close()
+
+        cID := new(big.Int)
+        cID.SetString(body.CID, 16)
+
+        return registerRequest{
+                cID: cID,
+        }, nil</span>
+}
+
+func decodeVerifyRequest(_ context.Context, r *http.Request) (interface{}, error) <span class="cov0" title="0">{
+        var body struct {
+                G string `json:"g"`
+                Q string `json:"q"`
+        }
+
+        if err := json.NewDecoder(r.Body).Decode(&amp;body); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer r.Body.Close()
+
+        g := new(big.Int)
+        g.SetString(body.G, 16)
+
+        q := new(big.Int)
+        q.SetString(body.Q, 16)
+
+        return verifyRequest{
+                g: g,
+                q: q,
+        }, nil</span>
+}
+
+func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error <span class="cov0" title="0">{
+        if e, ok := response.(errorer); ok &amp;&amp; e.error() != nil </span><span class="cov0" title="0">{
+                encodeError(ctx, e.error(), w)
+                return nil
+        }</span>
+        <span class="cov0" title="0">w.Header().Set("Content-Type", "application/json; charset=utf-8")
+        return json.NewEncoder(w).Encode(response)</span>
+}
+
+func encodeVerifyResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error <span class="cov0" title="0">{
+        if err, ok := response.(errorer); ok &amp;&amp; err.error() != nil </span><span class="cov0" title="0">{
+                encodeError(ctx, err.error(), w)
+                return nil
+        }</span>
+        <span class="cov0" title="0">w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+        resp, ok := response.(verifyResponse)
+        if !ok </span><span class="cov0" title="0">{
+                encodeError(ctx, ErrUnexpectedType, w)
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">body := struct {
+                R   string `json:"r"`
+                Err error  `json:"error,omitempty"`
+        }{
+                resp.r.Text(16),
+                resp.Err,
+        }
+
+        return json.NewEncoder(w).Encode(body)</span>
+}
+
+func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) <span class="cov0" title="0">{
+        var body struct {
+                CID    string `json:"cID"`
+                CNonce string `json:"cNonce"`
+                B      string `json:"b"`
+                Q      string `json:"q"`
+        }
+
+        if err := json.NewDecoder(r.Body).Decode(&amp;body); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer r.Body.Close()
+
+        cID := new(big.Int)
+        cID.SetString(body.CID, 16)
+
+        cNonce := new(big.Int)
+        cNonce.SetString(body.CNonce, 16)
+
+        b := new(big.Int)
+        b.SetString(body.B, 16)
+
+        q := new(big.Int)
+        q.SetString(body.Q, 16)
+
+        return expKRequest{
+                cID:    cID,
+                cNonce: cNonce,
+                b:      b,
+                q:      q,
+        }, nil</span>
+}
+
+func encodeExpKResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error <span class="cov0" title="0">{
+        if e, ok := response.(errorer); ok &amp;&amp; e.error() != nil </span><span class="cov0" title="0">{
+                encodeError(ctx, e.error(), w)
+                return nil
+        }</span>
+        <span class="cov0" title="0">w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+        r, ok := response.(expKResponse)
+        if !ok </span><span class="cov0" title="0">{
+                encodeError(ctx, ErrUnexpectedType, w)
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">body := struct {
+                SID    string `json:"sID"`
+                SNonce string `json:"sNonce"`
+                BD     string `json:"bd"`
+                Q0     string `json:"q0"`
+                KV     string `json:"kv"`
+                Err    error  `json:"error,omitempty"`
+        }{
+                r.sID.Text(16),
+                r.sNonce.Text(16),
+                r.bd.Text(16),
+                r.q0.Text(16),
+                r.kv.Text(16),
+                r.Err,
+        }
+
+        return json.NewEncoder(w).Encode(body)</span>
+}
+
+func decodeMetadataRequest(_ context.Context, r *http.Request) (interface{}, error) <span class="cov0" title="0">{
+        var body struct {
+                CID string `json:"cID"`
+                MAC string `json:"mac"`
+        }
+
+        if err := json.NewDecoder(r.Body).Decode(&amp;body); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer r.Body.Close()
+
+        cID := new(big.Int)
+        cID.SetString(body.CID, 16)
+
+        mac, err := hex.DecodeString(body.MAC)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return metadataRequest{
+                cID: cID,
+                mac: mac,
+        }, nil</span>
+}
+
+func encodeMetadataResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error <span class="cov0" title="0">{
+        return nil
+}</span>
+
+type errorer interface {
+        error() error
+}
+
+func encodeError(_ context.Context, err error, w http.ResponseWriter) <span class="cov0" title="0">{
+        w.Header().Set("Content-Type", "application/json; charset=utf-8")
+        switch err </span>{
+        case ErrInvalidArgument:<span class="cov0" title="0">
+                w.WriteHeader(http.StatusBadRequest)</span>
+        default:<span class="cov0" title="0">
+                w.WriteHeader(http.StatusInternalServerError)</span>
+        }
+        <span class="cov0" title="0">json.NewEncoder(w).Encode(map[string]interface{}{
+                "error": err.Error(),
+        })</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

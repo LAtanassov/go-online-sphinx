@@ -1,0 +1,197 @@
+# github.com/LAtanassov/go-online-sphinx/cmd/osctl
+cmd/osctl/main.go:26:6: cannot inline newCommand: function too complex: cost 326 exceeds budget 80
+cmd/osctl/main.go:18:6: cannot inline main: function too complex: cost 344 exceeds budget 80
+cmd/osctl/main.go:63:6: cannot inline getConfig: function too complex: cost 516 exceeds budget 80
+cmd/osctl/main.go:64:21: inlining call to viper.New func() *viper.Viper { var viper.v·2 *viper.Viper; viper.v·2 = <N>; viper.v·2 = new(viper.Viper); viper.v·2.keyDelim = string("."); viper.v·2.configName = string("config"); viper.v·2.fs = afero.NewOsFs(); viper.v·2.config = make(map[string]interface {}); viper.v·2.override = make(map[string]interface {}); viper.v·2.defaults = make(map[string]interface {}); viper.v·2.kvstore = make(map[string]interface {}); viper.v·2.pflags = make(map[string]viper.FlagValue); viper.v·2.env = make(map[string]string); viper.v·2.aliases = make(map[string]string); viper.v·2.typeByDefValue = bool(false); return viper.v·2 }
+cmd/osctl/main.go:64:21: inlining call to afero.NewOsFs func() afero.Fs { return afero.Fs(&afero.OsFs literal) }
+cmd/osctl/main.go:73:22: inlining call to viper.(*Viper).SetConfigName method(*viper.Viper) func(string) { if viper.in != string("") { viper.v.configName = viper.in; viper.v.configFile = string("") } }
+cmd/osctl/main.go:79:6: cannot inline initRun: function too complex: cost 1551 exceeds budget 80
+cmd/osctl/main.go:109:6: cannot inline registerRun: function too complex: cost 123 exceeds budget 80
+cmd/osctl/main.go:112:42: inlining call to client.NewInMemoryUserRepository func() *client.UserRepository { return &client.UserRepository literal }
+cmd/osctl/main.go:113:12: inlining call to client.New func(client.Poster, client.Configuration, client.Repository) *client.Client { return &client.Client literal }
+cmd/osctl/main.go:116:6: cannot inline loginRun: function too complex: cost 124 exceeds budget 80
+cmd/osctl/main.go:119:42: inlining call to client.NewInMemoryUserRepository func() *client.UserRepository { return &client.UserRepository literal }
+cmd/osctl/main.go:120:12: inlining call to client.New func(client.Poster, client.Configuration, client.Repository) *client.Client { return &client.Client literal }
+/tmp/go-build228083812/b001/_gomod_.go:6:8: can inline init.0 as: func() { __debug_modinfo__ = "0w\xaf\f\x92t\b\x02A\xe1\xc1\a\xe6\xd6\x18\xe6path\tgithub.com/LAtanassov/go-online-sphinx/cmd/osctl\nmod\tgithub.com/LAtanassov/go-online-sphinx\t(devel)\t\ndep\tgithub.com/fsnotify/fsnotify\tv1.4.7\th1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=\ndep\tgithub.com/hashicorp/hcl\tv1.0.0\th1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=\ndep\tgithub.com/magiconair/properties\tv1.8.0\th1:LLgXmsheXeRoUOBOjtwPQCWIYqM/LU1ayDtDePerRcY=\ndep\tgithub.com/mitchellh/go-homedir\tv1.0.0\th1:vKb8ShqSby24Yrqr/yDYkuFz8d0WUjys40rvnGC8aR0=\ndep\tgithub.com/mitchellh/mapstructure\tv1.0.0\th1:vVpGvMXJPqSDh2VYHF7gsfQj8Ncx+Xw5Y1KHeTRY+7I=\ndep\tgithub.com/pelletier/go-toml\tv1.2.0\th1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=\ndep\tgithub.com/spf13/afero\tv1.1.2\th1:m8/z1t7/fwjysjQRYbP0RD+bUIF/8tJwPdEZsI83ACI=\ndep\tgithub.com/spf13/cast\tv1.2.0\th1:HHl1DSRbEQN2i8tJmtS6ViPyHx35+p51amrdsiTCrkg=\ndep\tgithub.com/spf13/cobra\tv0.0.3\th1:ZlrZ4XsMRm04Fr5pSFxBgfND2EBVa1nLpiy1stUsX/8=\ndep\tgithub.com/spf13/jwalterweatherman\tv1.0.0\th1:XHEdyB+EcvlqZamSM4ZOMGlc93t6AcsBEu9Gc1vn7yk=\ndep\tgithub.com/spf13/pflag\tv1.0.3\th1:zPAT6CGy6wXeQ7NtTnaTerfKOsV6V6F8agHXFiazDkg=\ndep\tgithub.com/spf13/viper\tv1.2.1\th1:bIcUwXqLseLF3BDAZduuNfekWG87ibtFxi59Bq+oI9M=\ndep\tgolang.org/x/sys\tv0.0.0-20180906133057-8cf3aee42992\th1:BH3eQWeGbwRU2+wxxuuPOdFBmaiBH81O8BugSjHeTFg=\ndep\tgolang.org/x/text\tv0.3.0\th1:g61tztE5qeGQ89tm6NTjjM9VPIm088od1l6aSorWRWg=\ndep\tgopkg.in/yaml.v2\tv2.2.1\th1:mUhvW9EsL+naU5Q3cakzfE91YhliOondGd6ZrsDBHQE=\n\xf92C1\x86\x18 r\x00\x82B\x10A\x16\xd8\xf2" }
+cmd/osctl/main.go:55:9: rootCmd escapes to heap
+cmd/osctl/main.go:55:9: 	from rootCmd (passed to call[argument escapes]) at cmd/osctl/main.go:55:20
+cmd/osctl/main.go:28:6: moved to heap: rootCmd
+cmd/osctl/main.go:38:3: &cobra.Command literal escapes to heap
+cmd/osctl/main.go:38:3: 	from initCmd (assigned) at cmd/osctl/main.go:34:6
+cmd/osctl/main.go:38:3: 	from ... argument (arg to ...) at cmd/osctl/main.go:55:20
+cmd/osctl/main.go:38:3: 	from *(... argument) (indirection) at cmd/osctl/main.go:55:20
+cmd/osctl/main.go:38:3: 	from ... argument (passed to call[argument content escapes]) at cmd/osctl/main.go:55:20
+cmd/osctl/main.go:56:9: rootCmd escapes to heap
+cmd/osctl/main.go:56:9: 	from rootCmd (passed to call[argument escapes]) at cmd/osctl/main.go:56:20
+cmd/osctl/main.go:45:3: &cobra.Command literal escapes to heap
+cmd/osctl/main.go:45:3: 	from registerCmd (assigned) at cmd/osctl/main.go:41:6
+cmd/osctl/main.go:45:3: 	from ... argument (arg to ...) at cmd/osctl/main.go:56:20
+cmd/osctl/main.go:45:3: 	from *(... argument) (indirection) at cmd/osctl/main.go:56:20
+cmd/osctl/main.go:45:3: 	from ... argument (passed to call[argument content escapes]) at cmd/osctl/main.go:56:20
+cmd/osctl/main.go:57:9: rootCmd escapes to heap
+cmd/osctl/main.go:57:9: 	from rootCmd (passed to call[argument escapes]) at cmd/osctl/main.go:57:20
+cmd/osctl/main.go:52:3: &cobra.Command literal escapes to heap
+cmd/osctl/main.go:52:3: 	from loginCmd (assigned) at cmd/osctl/main.go:48:6
+cmd/osctl/main.go:52:3: 	from ... argument (arg to ...) at cmd/osctl/main.go:57:20
+cmd/osctl/main.go:52:3: 	from *(... argument) (indirection) at cmd/osctl/main.go:57:20
+cmd/osctl/main.go:52:3: 	from ... argument (passed to call[argument content escapes]) at cmd/osctl/main.go:57:20
+cmd/osctl/main.go:59:9: &rootCmd escapes to heap
+cmd/osctl/main.go:59:9: 	from ~r0 (return) at cmd/osctl/main.go:59:2
+cmd/osctl/main.go:55:20: newCommand ... argument does not escape
+cmd/osctl/main.go:56:20: newCommand ... argument does not escape
+cmd/osctl/main.go:57:20: newCommand ... argument does not escape
+cmd/osctl/main.go:21:14: err escapes to heap
+cmd/osctl/main.go:21:14: 	from ... argument (arg to ...) at cmd/osctl/main.go:21:14
+cmd/osctl/main.go:21:14: 	from *(... argument) (indirection) at cmd/osctl/main.go:21:14
+cmd/osctl/main.go:21:14: 	from ... argument (passed to call[argument content escapes]) at cmd/osctl/main.go:21:14
+cmd/osctl/main.go:21:14: main ... argument does not escape
+cmd/osctl/main.go:64:21: afero.Fs(&afero.OsFs literal) escapes to heap
+cmd/osctl/main.go:64:21: 	from ~R0 (assign-pair) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: 	from viper.v·2.fs (star-dot-equals) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: &afero.OsFs literal escapes to heap
+cmd/osctl/main.go:64:21: 	from afero.Fs(&afero.OsFs literal) (interface-converted) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: 	from ~R0 (assign-pair) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: 	from viper.v·2.fs (star-dot-equals) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: make(map[string]interface {}) escapes to heap
+cmd/osctl/main.go:64:21: 	from viper.v·2.config (star-dot-equals) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: make(map[string]interface {}) escapes to heap
+cmd/osctl/main.go:64:21: 	from viper.v·2.override (star-dot-equals) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: make(map[string]interface {}) escapes to heap
+cmd/osctl/main.go:64:21: 	from viper.v·2.defaults (star-dot-equals) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: make(map[string]interface {}) escapes to heap
+cmd/osctl/main.go:64:21: 	from viper.v·2.kvstore (star-dot-equals) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: make(map[string]viper.FlagValue) escapes to heap
+cmd/osctl/main.go:64:21: 	from viper.v·2.pflags (star-dot-equals) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: make(map[string]string) escapes to heap
+cmd/osctl/main.go:64:21: 	from viper.v·2.env (star-dot-equals) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: make(map[string]string) escapes to heap
+cmd/osctl/main.go:64:21: 	from viper.v·2.aliases (star-dot-equals) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:68:14: err escapes to heap
+cmd/osctl/main.go:68:14: 	from ... argument (arg to ...) at cmd/osctl/main.go:68:14
+cmd/osctl/main.go:68:14: 	from *(... argument) (indirection) at cmd/osctl/main.go:68:14
+cmd/osctl/main.go:68:14: 	from ... argument (passed to call[argument content escapes]) at cmd/osctl/main.go:68:14
+cmd/osctl/main.go:64:21: new(viper.Viper) escapes to heap
+cmd/osctl/main.go:64:21: 	from viper.v·2 (assigned) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: 	from ~R0 (assign-pair) at cmd/osctl/main.go:64:21
+cmd/osctl/main.go:64:21: 	from config (assigned) at cmd/osctl/main.go:64:9
+cmd/osctl/main.go:64:21: 	from ~r0 (return) at cmd/osctl/main.go:76:2
+cmd/osctl/main.go:68:14: getConfig ... argument does not escape
+cmd/osctl/main.go:82:25: "online-sphinx" escapes to heap
+cmd/osctl/main.go:82:25: 	from "online-sphinx" (passed to call[argument escapes]) at cmd/osctl/main.go:82:12
+cmd/osctl/main.go:83:28: "0.1.0" escapes to heap
+cmd/osctl/main.go:83:28: 	from "0.1.0" (passed to call[argument escapes]) at cmd/osctl/main.go:83:12
+cmd/osctl/main.go:85:26: "client" escapes to heap
+cmd/osctl/main.go:85:26: 	from "client" (passed to call[argument escapes]) at cmd/osctl/main.go:85:12
+cmd/osctl/main.go:86:36: 8 escapes to heap
+cmd/osctl/main.go:86:36: 	from 8 (passed to call[argument escapes]) at cmd/osctl/main.go:86:12
+cmd/osctl/main.go:90:12: err escapes to heap
+cmd/osctl/main.go:90:12: 	from ... argument (arg to ...) at cmd/osctl/main.go:90:12
+cmd/osctl/main.go:90:12: 	from *(... argument) (indirection) at cmd/osctl/main.go:90:12
+cmd/osctl/main.go:90:12: 	from ... argument (passed to call[argument content escapes]) at cmd/osctl/main.go:90:12
+cmd/osctl/main.go:92:38: k.Text(16) escapes to heap
+cmd/osctl/main.go:92:38: 	from k.Text(16) (passed to call[argument escapes]) at cmd/osctl/main.go:92:12
+cmd/osctl/main.go:93:37: "sha256" escapes to heap
+cmd/osctl/main.go:93:37: 	from "sha256" (passed to call[argument escapes]) at cmd/osctl/main.go:93:12
+cmd/osctl/main.go:97:12: err escapes to heap
+cmd/osctl/main.go:97:12: 	from ... argument (arg to ...) at cmd/osctl/main.go:97:12
+cmd/osctl/main.go:97:12: 	from *(... argument) (indirection) at cmd/osctl/main.go:97:12
+cmd/osctl/main.go:97:12: 	from ... argument (passed to call[argument content escapes]) at cmd/osctl/main.go:97:12
+cmd/osctl/main.go:99:40: q.Text(16) escapes to heap
+cmd/osctl/main.go:99:40: 	from q.Text(16) (passed to call[argument escapes]) at cmd/osctl/main.go:99:12
+cmd/osctl/main.go:101:31: ":8080" escapes to heap
+cmd/osctl/main.go:101:31: 	from ":8080" (passed to call[argument escapes]) at cmd/osctl/main.go:101:12
+cmd/osctl/main.go:105:14: err escapes to heap
+cmd/osctl/main.go:105:14: 	from ... argument (arg to ...) at cmd/osctl/main.go:105:14
+cmd/osctl/main.go:105:14: 	from *(... argument) (indirection) at cmd/osctl/main.go:105:14
+cmd/osctl/main.go:105:14: 	from ... argument (passed to call[argument content escapes]) at cmd/osctl/main.go:105:14
+cmd/osctl/main.go:79:14: initRun cmd does not escape
+cmd/osctl/main.go:79:34: initRun args does not escape
+cmd/osctl/main.go:90:12: initRun ... argument does not escape
+cmd/osctl/main.go:97:12: initRun ... argument does not escape
+cmd/osctl/main.go:105:14: initRun ... argument does not escape
+cmd/osctl/main.go:113:12: http.DefaultClient escapes to heap
+cmd/osctl/main.go:113:12: 	from client.pst (assign-pair) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:113:12: 	from &client.Client literal (struct literal element) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:113:12: 	from &client.Client literal (pointer literal) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:113:12: 	from ~R0 (assign-pair) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:113:12: 	from (*client.Client)(~R0) (converted) at cmd/osctl/main.go:113:43
+cmd/osctl/main.go:113:12: 	from *(*client.Client)(~R0) (indirection) at cmd/osctl/main.go:113:43
+cmd/osctl/main.go:113:12: 	from (*client.Client)(~R0) (passed to call[argument content escapes]) at cmd/osctl/main.go:113:52
+cmd/osctl/main.go:113:12: repo escapes to heap
+cmd/osctl/main.go:113:12: 	from client.repo (assign-pair) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:113:12: 	from &client.Client literal (struct literal element) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:113:12: 	from &client.Client literal (pointer literal) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:113:12: 	from ~R0 (assign-pair) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:113:12: 	from (*client.Client)(~R0) (converted) at cmd/osctl/main.go:113:43
+cmd/osctl/main.go:113:12: 	from *(*client.Client)(~R0) (indirection) at cmd/osctl/main.go:113:43
+cmd/osctl/main.go:113:12: 	from (*client.Client)(~R0) (passed to call[argument content escapes]) at cmd/osctl/main.go:113:52
+cmd/osctl/main.go:112:42: &client.UserRepository literal escapes to heap
+cmd/osctl/main.go:112:42: 	from ~R0 (assign-pair) at cmd/osctl/main.go:112:42
+cmd/osctl/main.go:112:42: 	from repo (assigned) at cmd/osctl/main.go:112:7
+cmd/osctl/main.go:112:42: 	from repo (interface-converted) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:112:42: 	from client.repo (assign-pair) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:112:42: 	from &client.Client literal (struct literal element) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:112:42: 	from &client.Client literal (pointer literal) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:112:42: 	from ~R0 (assign-pair) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:112:42: 	from (*client.Client)(~R0) (converted) at cmd/osctl/main.go:113:43
+cmd/osctl/main.go:112:42: 	from *(*client.Client)(~R0) (indirection) at cmd/osctl/main.go:113:43
+cmd/osctl/main.go:112:42: 	from (*client.Client)(~R0) (passed to call[argument content escapes]) at cmd/osctl/main.go:113:52
+cmd/osctl/main.go:112:42: make(map[string]client.User) escapes to heap
+cmd/osctl/main.go:112:42: 	from &client.UserRepository literal (struct literal element) at cmd/osctl/main.go:112:42
+cmd/osctl/main.go:112:42: 	from &client.UserRepository literal (pointer literal) at cmd/osctl/main.go:112:42
+cmd/osctl/main.go:112:42: 	from ~R0 (assign-pair) at cmd/osctl/main.go:112:42
+cmd/osctl/main.go:112:42: 	from repo (assigned) at cmd/osctl/main.go:112:7
+cmd/osctl/main.go:112:42: 	from repo (interface-converted) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:112:42: 	from client.repo (assign-pair) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:112:42: 	from &client.Client literal (struct literal element) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:112:42: 	from &client.Client literal (pointer literal) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:112:42: 	from ~R0 (assign-pair) at cmd/osctl/main.go:113:12
+cmd/osctl/main.go:112:42: 	from (*client.Client)(~R0) (converted) at cmd/osctl/main.go:113:43
+cmd/osctl/main.go:112:42: 	from *(*client.Client)(~R0) (indirection) at cmd/osctl/main.go:113:43
+cmd/osctl/main.go:112:42: 	from (*client.Client)(~R0) (passed to call[argument content escapes]) at cmd/osctl/main.go:113:52
+cmd/osctl/main.go:109:18: registerRun cmd does not escape
+cmd/osctl/main.go:109:38: registerRun args does not escape
+cmd/osctl/main.go:113:12: registerRun &client.Client literal does not escape
+cmd/osctl/main.go:120:12: http.DefaultClient escapes to heap
+cmd/osctl/main.go:120:12: 	from client.pst (assign-pair) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:120:12: 	from &client.Client literal (struct literal element) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:120:12: 	from &client.Client literal (pointer literal) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:120:12: 	from ~R0 (assign-pair) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:120:12: 	from (*client.Client)(~R0) (converted) at cmd/osctl/main.go:120:43
+cmd/osctl/main.go:120:12: 	from *(*client.Client)(~R0) (indirection) at cmd/osctl/main.go:120:43
+cmd/osctl/main.go:120:12: 	from (*client.Client)(~R0) (passed to call[argument content escapes]) at cmd/osctl/main.go:120:49
+cmd/osctl/main.go:120:12: repo escapes to heap
+cmd/osctl/main.go:120:12: 	from client.repo (assign-pair) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:120:12: 	from &client.Client literal (struct literal element) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:120:12: 	from &client.Client literal (pointer literal) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:120:12: 	from ~R0 (assign-pair) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:120:12: 	from (*client.Client)(~R0) (converted) at cmd/osctl/main.go:120:43
+cmd/osctl/main.go:120:12: 	from *(*client.Client)(~R0) (indirection) at cmd/osctl/main.go:120:43
+cmd/osctl/main.go:120:12: 	from (*client.Client)(~R0) (passed to call[argument content escapes]) at cmd/osctl/main.go:120:49
+cmd/osctl/main.go:119:42: &client.UserRepository literal escapes to heap
+cmd/osctl/main.go:119:42: 	from ~R0 (assign-pair) at cmd/osctl/main.go:119:42
+cmd/osctl/main.go:119:42: 	from repo (assigned) at cmd/osctl/main.go:119:7
+cmd/osctl/main.go:119:42: 	from repo (interface-converted) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:119:42: 	from client.repo (assign-pair) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:119:42: 	from &client.Client literal (struct literal element) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:119:42: 	from &client.Client literal (pointer literal) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:119:42: 	from ~R0 (assign-pair) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:119:42: 	from (*client.Client)(~R0) (converted) at cmd/osctl/main.go:120:43
+cmd/osctl/main.go:119:42: 	from *(*client.Client)(~R0) (indirection) at cmd/osctl/main.go:120:43
+cmd/osctl/main.go:119:42: 	from (*client.Client)(~R0) (passed to call[argument content escapes]) at cmd/osctl/main.go:120:49
+cmd/osctl/main.go:119:42: make(map[string]client.User) escapes to heap
+cmd/osctl/main.go:119:42: 	from &client.UserRepository literal (struct literal element) at cmd/osctl/main.go:119:42
+cmd/osctl/main.go:119:42: 	from &client.UserRepository literal (pointer literal) at cmd/osctl/main.go:119:42
+cmd/osctl/main.go:119:42: 	from ~R0 (assign-pair) at cmd/osctl/main.go:119:42
+cmd/osctl/main.go:119:42: 	from repo (assigned) at cmd/osctl/main.go:119:7
+cmd/osctl/main.go:119:42: 	from repo (interface-converted) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:119:42: 	from client.repo (assign-pair) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:119:42: 	from &client.Client literal (struct literal element) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:119:42: 	from &client.Client literal (pointer literal) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:119:42: 	from ~R0 (assign-pair) at cmd/osctl/main.go:120:12
+cmd/osctl/main.go:119:42: 	from (*client.Client)(~R0) (converted) at cmd/osctl/main.go:120:43
+cmd/osctl/main.go:119:42: 	from *(*client.Client)(~R0) (indirection) at cmd/osctl/main.go:120:43
+cmd/osctl/main.go:119:42: 	from (*client.Client)(~R0) (passed to call[argument content escapes]) at cmd/osctl/main.go:120:49
+cmd/osctl/main.go:116:15: loginRun cmd does not escape
+cmd/osctl/main.go:116:35: loginRun args does not escape
+cmd/osctl/main.go:120:12: loginRun &client.Client literal does not escape
