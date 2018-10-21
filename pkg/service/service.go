@@ -109,7 +109,7 @@ func (o *OnlineSphinx) Verify(ski, g, q *big.Int) (r *big.Int, err error) {
 	return crypto.ExpInGroup(g, ski, q), nil
 }
 
-// GetMetadata ...
+// GetMetadata verifies hmac and returns all domains associated with client ID
 func (o *OnlineSphinx) GetMetadata(cID *big.Int, mac []byte) (domains []Domain, err error) {
 
 	u, err := o.users.Get(cID.Text(16))
