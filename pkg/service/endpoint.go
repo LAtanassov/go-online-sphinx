@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"math/big"
+	"os"
 
 	"github.com/go-kit/kit/endpoint"
 )
@@ -29,7 +30,11 @@ func makeExpKEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(expKRequest)
 
-		sID, sNonce, bd, q0, kv, err := s.ExpK(req.cID, req.cNonce, req.b, req.q)
+		ski, sID, sNonce, bd, q0, kv, err := s.ExpK(req.cID, req.cNonce, req.b, req.q)
+
+		// TODO: should store within session
+		os.Setenv("SKi", ski.Text(16))
+
 		return expKResponse{sID: sID, sNonce: sNonce, bd: bd, q0: q0, kv: kv, Err: err}, nil
 	}
 }
@@ -73,7 +78,12 @@ type metadataResponse struct {
 func makeVerifyEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(verifyRequest)
-		r, err := s.Verify(req.g, req.q)
+
+		// TODO: should store within session
+		ski := new(big.Int)
+		ski.SetString(os.Getenv("SKi"), 16)
+
+		r, err := s.Verify(ski, req.g, req.q)
 		return verifyResponse{r: r, Err: err}, nil
 	}
 }

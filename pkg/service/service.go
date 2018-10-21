@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"math/big"
-	"os"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 )
@@ -18,8 +17,8 @@ var two = big.NewInt(2)
 // Service represents the interface provided to other layers.
 type Service interface {
 	Register(cID *big.Int) error
-	ExpK(cID, cNonce, b, q *big.Int) (sID, sNonce, bd, q0, kv *big.Int, err error)
-	Verify(g, q *big.Int) (r *big.Int, err error)
+	ExpK(cID, cNonce, b, q *big.Int) (ski, sID, sNonce, bd, q0, kv *big.Int, err error)
+	Verify(ski, g, q *big.Int) (r *big.Int, err error)
 
 	GetMetadata(cID *big.Int, mac []byte) (domains []Domain, err error)
 
@@ -67,7 +66,7 @@ func (o *OnlineSphinx) Register(cID *big.Int) error {
 }
 
 // ExpK returns r**k mod |2q + 1|
-func (o *OnlineSphinx) ExpK(cID, cNonce, b, q *big.Int) (sID, sNonce, bd, q0, kv *big.Int, err error) {
+func (o *OnlineSphinx) ExpK(cID, cNonce, b, q *big.Int) (ski, sID, sNonce, bd, q0, kv *big.Int, err error) {
 	sID = o.config.sID
 	q0 = o.config.q0
 
@@ -87,23 +86,19 @@ func (o *OnlineSphinx) ExpK(cID, cNonce, b, q *big.Int) (sID, sNonce, bd, q0, kv
 	}
 	kv = u.kv
 
-	SKi := new(big.Int)
-	SKi.SetBytes(crypto.HmacData(o.config.hash, kv.Bytes(), cID.Bytes(), sID.Bytes(), cNonce.Bytes(), sNonce.Bytes()))
-
-	os.Setenv("SKi", SKi.Text(16))
+	ski = new(big.Int)
+	ski.SetBytes(crypto.HmacData(o.config.hash, kv.Bytes(), cID.Bytes(), sID.Bytes(), cNonce.Bytes(), sNonce.Bytes()))
 
 	return
 }
 
 // Verify decrypts the vNonce, increments it and encrypts it again.
-func (o *OnlineSphinx) Verify(g, q *big.Int) (r *big.Int, err error) {
-
-	SKi := new(big.Int)
-	SKi.SetString(os.Getenv("SKi"), 16)
-
-	return crypto.ExpInGroup(g, SKi, q), nil
+func (o *OnlineSphinx) Verify(ski, g, q *big.Int) (r *big.Int, err error) {
+	return crypto.ExpInGroup(g, ski, q), nil
 }
 
+// GetMetadata ...
 func (o *OnlineSphinx) GetMetadata(cID *big.Int, mac []byte) (domains []Domain, err error) {
+
 	return nil, nil
 }

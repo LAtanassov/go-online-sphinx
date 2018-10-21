@@ -3,7 +3,6 @@ package service
 import (
 	"crypto/sha256"
 	"math/big"
-	"os"
 	"testing"
 )
 
@@ -17,7 +16,7 @@ func TestOnlineSphinx_ExpK(t *testing.T) {
 			hash: sha256.New,
 		})
 
-		_, _, _, _, _, err := r.ExpK(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1))
+		_, _, _, _, _, _, err := r.ExpK(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1))
 		if err != ErrUserNotFound {
 			t.Errorf("Service.ExpK() error = %v wantError = %v", err, ErrUserNotFound)
 		}
@@ -33,7 +32,7 @@ func TestOnlineSphinx_ExpK(t *testing.T) {
 		})
 		r.Register(big.NewInt(1))
 
-		_, _, _, _, _, err := r.ExpK(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1))
+		_, _, _, _, _, _, err := r.ExpK(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1))
 		if err != nil {
 			t.Errorf("Service.ExpK() error = %v", err)
 		}
@@ -50,9 +49,7 @@ func TestOnlineSphinx_Verify(t *testing.T) {
 			hash: sha256.New,
 		})
 
-		os.Setenv("SKi", big.NewInt(13).Text(16))
-
-		_, err := s.Verify(big.NewInt(24), big.NewInt(52))
+		_, err := s.Verify(big.NewInt(42), big.NewInt(24), big.NewInt(52))
 		if err != nil {
 			t.Errorf("Service.ExpK() error = %v wantError = %v", err, ErrUserNotFound)
 		}
