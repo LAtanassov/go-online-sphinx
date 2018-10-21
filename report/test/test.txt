@@ -1,5 +1,0 @@
-?   	github.com/LAtanassov/go-online-sphinx/cmd/osctl	[no test files]
-?   	github.com/LAtanassov/go-online-sphinx/cmd/ossrv	[no test files]
-ok  	github.com/LAtanassov/go-online-sphinx/pkg/client	0.006s	coverage: 79.8% of statements
-ok  	github.com/LAtanassov/go-online-sphinx/pkg/crypto	0.002s	coverage: 69.2% of statements
-ok  	github.com/LAtanassov/go-online-sphinx/pkg/service	0.003s	coverage: 22.1% of statements
