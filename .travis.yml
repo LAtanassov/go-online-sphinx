@@ -3,6 +3,9 @@ language: go
 go:
   - 1.11.x
 
+env:
+  - GO111MODULE=on
+
 before_script:
   - go get github.com/golang/lint/golint
   - go get honnef.co/go/tools/cmd/megacheck
