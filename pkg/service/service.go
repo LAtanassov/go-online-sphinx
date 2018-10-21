@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"crypto/rand"
 	"errors"
 	"math/big"
@@ -10,6 +11,9 @@ import (
 
 // ErrInvalidArgument is returned when an invalid argument was passed.
 var ErrInvalidArgument = errors.New("invalid arguments")
+
+// ErrAuthorizationFailed is returned when authorization failue happend
+var ErrAuthorizationFailed = errors.New("authorization failed")
 
 var one = big.NewInt(1)
 var two = big.NewInt(2)
@@ -26,10 +30,16 @@ type Service interface {
 	//GetVault(u string, bmk *big.Int) (bj, qj *big.Int, err error)
 }
 
-// Repository represents a store for user management - need to be implemented
-type Repository interface {
+// UserRepository represents a store for user management - need to be implemented
+type UserRepository interface {
 	Add(u User) error
 	Get(ID string) (User, error)
+}
+
+// DomainRepository represents a store for domain management - need to be implemented
+type DomainRepository interface {
+	Add(id string, d Domain) error
+	Get(id string) ([]Domain, error)
 }
 
 // Vault ...
@@ -40,15 +50,17 @@ type Vault struct {
 
 // OnlineSphinx provides all operations needed.
 type OnlineSphinx struct {
-	repo   Repository
-	config Configuration
+	users   UserRepository
+	domains DomainRepository
+	config  Configuration
 }
 
 // New returns an Online SPHINX service - to share - pointer.
-func New(repo Repository, cfg Configuration) *OnlineSphinx {
+func New(users UserRepository, domains DomainRepository, cfg Configuration) *OnlineSphinx {
 	return &OnlineSphinx{
-		repo:   repo,
-		config: cfg,
+		users:   users,
+		domains: domains,
+		config:  cfg,
 	}
 }
 
@@ -62,7 +74,7 @@ func (o *OnlineSphinx) Register(cID *big.Int) error {
 		return err
 	}
 
-	return o.repo.Add(User{cID: cID, kv: kv})
+	return o.users.Add(User{cID: cID, kv: kv})
 }
 
 // ExpK returns r**k mod |2q + 1|
@@ -80,7 +92,7 @@ func (o *OnlineSphinx) ExpK(cID, cNonce, b, q *big.Int) (ski, sID, sNonce, bd, q
 		return
 	}
 
-	u, err := o.repo.Get(cID.Text(16))
+	u, err := o.users.Get(cID.Text(16))
 	if err != nil {
 		return
 	}
@@ -100,5 +112,19 @@ func (o *OnlineSphinx) Verify(ski, g, q *big.Int) (r *big.Int, err error) {
 // GetMetadata ...
 func (o *OnlineSphinx) GetMetadata(cID *big.Int, mac []byte) (domains []Domain, err error) {
 
-	return nil, nil
+	u, err := o.users.Get(cID.Text(16))
+	if err != nil {
+		return
+	}
+
+	vmac := crypto.HmacData(o.config.hash, u.kv.Bytes(), cID.Bytes(), o.config.sID.Bytes())
+
+	if bytes.Compare(mac, vmac) != 0 {
+		err = ErrAuthorizationFailed
+		return
+	}
+
+	domains, err = o.domains.Get(cID.Text(16))
+
+	return
 }

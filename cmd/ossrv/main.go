@@ -25,8 +25,11 @@ func main() {
 	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 
-	var repo service.Repository
-	repo = service.NewInMemoryUserRepository()
+	var users service.UserRepository
+	users = service.NewUserRepository()
+
+	var domains service.DomainRepository
+	domains = service.NewDomainRepository()
 
 	bits := big.NewInt(8)
 	max := new(big.Int)
@@ -48,7 +51,7 @@ func main() {
 	cfg := service.NewConfiguration(big.NewInt(1), k, q0, bits, sha256.New)
 
 	var svc service.Service
-	svc = service.New(repo, cfg)
+	svc = service.New(users, domains, cfg)
 	svc = service.NewLoggingService(logger, svc)
 
 	httpLogger := log.With(logger, "component", "http")

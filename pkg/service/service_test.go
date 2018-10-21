@@ -8,7 +8,7 @@ import (
 
 func TestOnlineSphinx_ExpK(t *testing.T) {
 	t.Run("should return error if user does not exist", func(t *testing.T) {
-		r := New(NewInMemoryUserRepository(), Configuration{
+		r := New(NewUserRepository(), NewDomainRepository(), Configuration{
 			sID:  big.NewInt(1),
 			k:    big.NewInt(1),
 			q0:   big.NewInt(1),
@@ -23,7 +23,7 @@ func TestOnlineSphinx_ExpK(t *testing.T) {
 	})
 
 	t.Run("should return no error if user exists", func(t *testing.T) {
-		r := New(NewInMemoryUserRepository(), Configuration{
+		r := New(NewUserRepository(), NewDomainRepository(), Configuration{
 			sID:  big.NewInt(1),
 			k:    big.NewInt(1),
 			q0:   big.NewInt(1),
@@ -41,7 +41,7 @@ func TestOnlineSphinx_ExpK(t *testing.T) {
 
 func TestOnlineSphinx_Verify(t *testing.T) {
 	t.Run("should return error if user does not exist", func(t *testing.T) {
-		s := New(NewInMemoryUserRepository(), Configuration{
+		s := New(NewUserRepository(), NewDomainRepository(), Configuration{
 			sID:  big.NewInt(1),
 			k:    big.NewInt(1),
 			q0:   big.NewInt(1),
