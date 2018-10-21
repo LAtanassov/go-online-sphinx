@@ -12,4 +12,4 @@ before_script:
   - go get github.com/fzipp/gocyclo
 
 script:
-  - ci-script.sh
+  - bash ./ci-script.sh
