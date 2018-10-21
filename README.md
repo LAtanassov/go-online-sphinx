@@ -2,6 +2,8 @@
 
 Online SPHINX - inspired by [SPHINX](https://ieeexplore.ieee.org/document/7980050)
 
+[![Build Status](https://travis-ci.com/LAtanassov/go-online-sphinx.svg?branch=master)](https://travis-ci.com/LAtanassov/go-online-sphinx)
+
 # Rough Protocol
 
 ## Register phase
