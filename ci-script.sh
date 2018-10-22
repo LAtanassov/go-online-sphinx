@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/)
 
