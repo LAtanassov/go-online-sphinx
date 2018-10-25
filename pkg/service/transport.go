@@ -96,7 +96,7 @@ func MakeMetadataHandler(s Service, logger kitlog.Logger) http.Handler {
 		opts...,
 	)
 
-	r.Handle("/v1/metadata", metadataHandler).Methods("POST")
+	r.Handle("/v1/metadata", metadataHandler).Methods("GET")
 
 	return r
 }
