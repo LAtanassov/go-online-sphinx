@@ -71,7 +71,7 @@ type metadataRequest struct {
 }
 
 type metadataResponse struct {
-	domains []Domain
+	domains []string
 	Err     error `json:"error,omitempty"`
 }
 
@@ -79,7 +79,7 @@ func makeVerifyEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(verifyRequest)
 
-		// TODO: should store within session
+		// TODO: should be stored within session
 		ski := new(big.Int)
 		ski.SetString(os.Getenv("SKi"), 16)
 

@@ -9,8 +9,8 @@ import (
 // ErrUserAlreadyExists in repostory already
 var ErrUserAlreadyExists = errors.New("user already exists")
 
-// ErrDomainAlreadyExists in repostory already
-var ErrDomainAlreadyExists = errors.New("domain already exists")
+// ErrVaultAlreadyExists in repostory already
+var ErrVaultAlreadyExists = errors.New("vault already exists")
 
 // ErrUserNotFound in repostory
 var ErrUserNotFound = errors.New("user not found")
@@ -65,43 +65,43 @@ func (r *InMemoryUserRepository) Get(cID string) (User, error) {
 	return u, nil
 }
 
-// InMemoryDomainRepository provides an domain repository.
-type InMemoryDomainRepository struct {
-	mutex   sync.Mutex
-	domains map[string][]Domain
+// InMemoryVaultRepository provides a vault repository.
+type InMemoryVaultRepository struct {
+	mutex  sync.Mutex
+	vaults map[string]Vault
 }
 
-// NewDomainRepository creates and returns an inmemory user repository.
-func NewDomainRepository() *InMemoryDomainRepository {
-	return &InMemoryDomainRepository{
-		mutex:   sync.Mutex{},
-		domains: make(map[string][]Domain),
+// NewVaultRepository creates and returns an inmemory vault repository.
+func NewVaultRepository() *InMemoryVaultRepository {
+	return &InMemoryVaultRepository{
+		mutex:  sync.Mutex{},
+		vaults: make(map[string]Vault),
 	}
 }
 
-// Add new user to user repository if does not exists
-func (r *InMemoryDomainRepository) Add(id string, d Domain) error {
+// Add new vault to vault repository if does not exists
+func (r *InMemoryVaultRepository) Add(d string, v Vault) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	domains, ok := r.domains[id]
+	v, ok := r.vaults[d]
 	if ok {
-		return ErrDomainAlreadyExists
+		return ErrVaultAlreadyExists
 	}
 
-	r.domains[id] = append(domains, d)
+	r.vaults[d] = v
 	return nil
 }
 
 // Get an existing user
-func (r *InMemoryDomainRepository) Get(id string) ([]Domain, error) {
+func (r *InMemoryVaultRepository) Get(d string) (Vault, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	domains, ok := r.domains[id]
+	vault, ok := r.vaults[d]
 	if !ok {
-		domains = []Domain{}
+		vault = Vault{}
 	}
 
-	return domains, nil
+	return vault, nil
 }
