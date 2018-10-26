@@ -28,8 +28,8 @@ func main() {
 	var users service.UserRepository
 	users = service.NewUserRepository()
 
-	var domains service.DomainRepository
-	domains = service.NewDomainRepository()
+	var vaults service.VaultRepository
+	vaults = service.NewVaultRepository()
 
 	bits := big.NewInt(8)
 	max := new(big.Int)
@@ -51,7 +51,7 @@ func main() {
 	cfg := service.NewConfiguration(big.NewInt(1), k, q0, bits, sha256.New)
 
 	var svc service.Service
-	svc = service.New(users, domains, cfg)
+	svc = service.New(users, vaults, cfg)
 	svc = service.NewLoggingService(logger, svc)
 
 	httpLogger := log.With(logger, "component", "http")
@@ -60,9 +60,11 @@ func main() {
 
 	mux.Handle("/v1/register", service.MakeRegisterHandler(svc, httpLogger))
 	mux.Handle("/v1/login/expk", service.MakeExpKHandler(svc, httpLogger))
-	mux.Handle("/v1/login/verify", service.MakeVerifyHandler(svc, httpLogger))
+	mux.Handle("/v1/login/challenge", service.MakeChallengeHandler(svc, httpLogger))
 
 	mux.Handle("/v1/metadata", service.MakeMetadataHandler(svc, httpLogger))
+	mux.Handle("/v1/add", service.MakeAddHandler(svc, httpLogger))
+	mux.Handle("/v1/get", service.MakeGetHandler(svc, httpLogger))
 
 	http.Handle("/", service.MakeAccessControl(mux))
 	http.Handle("/_status/liveness", service.MakeLivenessHandler())

@@ -6,20 +6,21 @@ import (
 	"sync"
 )
 
-// ErrUserAlreadyExists in repostory already
-var ErrUserAlreadyExists = errors.New("user already exists")
+var (
+	// ErrUserAlreadyExists in repostory already
+	ErrUserAlreadyExists = errors.New("user already exists")
+	// ErrVaultAlreadyExists in repostory already
+	ErrVaultAlreadyExists = errors.New("vault already exists")
+	// ErrUserNotFound in repostory
+	ErrUserNotFound = errors.New("user not found")
+)
 
-// ErrVaultAlreadyExists in repostory already
-var ErrVaultAlreadyExists = errors.New("vault already exists")
-
-// ErrUserNotFound in repostory
-var ErrUserNotFound = errors.New("user not found")
-
-// User is an entity and contains all user related informated to implement server-side Online SPHINX.
-type User struct {
-	cID   *big.Int
-	kv    *big.Int
-	store map[string]Vault
+// NewUserRepository creates and returns an inmemory user repository.
+func NewUserRepository() *InMemoryUserRepository {
+	return &InMemoryUserRepository{
+		mutex: sync.Mutex{},
+		users: make(map[string]User),
+	}
 }
 
 // InMemoryUserRepository provides an user repository.
@@ -31,12 +32,10 @@ type InMemoryUserRepository struct {
 	users map[string]User
 }
 
-// NewUserRepository creates and returns an inmemory user repository.
-func NewUserRepository() *InMemoryUserRepository {
-	return &InMemoryUserRepository{
-		mutex: sync.Mutex{},
-		users: make(map[string]User),
-	}
+// User is an entity and contains all user related informated to implement server-side Online SPHINX.
+type User struct {
+	cID *big.Int
+	kv  *big.Int
 }
 
 // Add new user to user repository if does not exists
@@ -65,12 +64,6 @@ func (r *InMemoryUserRepository) Get(cID string) (User, error) {
 	return u, nil
 }
 
-// InMemoryVaultRepository provides a vault repository.
-type InMemoryVaultRepository struct {
-	mutex  sync.Mutex
-	vaults map[string]Vault
-}
-
 // NewVaultRepository creates and returns an inmemory vault repository.
 func NewVaultRepository() *InMemoryVaultRepository {
 	return &InMemoryVaultRepository{
@@ -79,29 +72,46 @@ func NewVaultRepository() *InMemoryVaultRepository {
 	}
 }
 
+// InMemoryVaultRepository provides a vault repository.
+type InMemoryVaultRepository struct {
+	mutex  sync.Mutex
+	vaults map[string]Vault
+}
+
+// Vault ...
+type Vault struct {
+	k  *big.Int
+	qj *big.Int
+}
+
 // Add new vault to vault repository if does not exists
-func (r *InMemoryVaultRepository) Add(d string, v Vault) error {
+func (r *InMemoryVaultRepository) Add(domain string, vault Vault) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	v, ok := r.vaults[d]
+	_, ok := r.vaults[domain]
 	if ok {
 		return ErrVaultAlreadyExists
 	}
 
-	r.vaults[d] = v
+	r.vaults[domain] = vault
 	return nil
 }
 
 // Get an existing user
-func (r *InMemoryVaultRepository) Get(d string) (Vault, error) {
+func (r *InMemoryVaultRepository) Get(domain string) (Vault, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	vault, ok := r.vaults[d]
+	vault, ok := r.vaults[domain]
 	if !ok {
 		vault = Vault{}
 	}
 
 	return vault, nil
+}
+
+// GetDomains an existing user
+func (r *InMemoryVaultRepository) GetDomains() ([]string, error) {
+	return []string{}, nil
 }

@@ -8,6 +8,19 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
+func makeExpKEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(expKRequest)
+
+		ski, sID, sNonce, bd, q0, kv, err := s.ExpK(req.cID, req.cNonce, req.b, req.q)
+
+		// TODO: should store within session
+		os.Setenv("SKi", ski.Text(16))
+
+		return expKResponse{sID: sID, sNonce: sNonce, bd: bd, q0: q0, kv: kv, Err: err}, nil
+	}
+}
+
 type expKRequest struct {
 	cID    *big.Int
 	cNonce *big.Int
@@ -24,18 +37,11 @@ type expKResponse struct {
 	Err    error
 }
 
-func (r expKResponse) error() error { return r.Err }
-
-func makeExpKEndpoint(s Service) endpoint.Endpoint {
+func makeRegisterEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(expKRequest)
-
-		ski, sID, sNonce, bd, q0, kv, err := s.ExpK(req.cID, req.cNonce, req.b, req.q)
-
-		// TODO: should store within session
-		os.Setenv("SKi", ski.Text(16))
-
-		return expKResponse{sID: sID, sNonce: sNonce, bd: bd, q0: q0, kv: kv, Err: err}, nil
+		req := request.(registerRequest)
+		err := s.Register(req.cID)
+		return registerResponse{Err: err}, nil
 	}
 }
 
@@ -47,22 +53,37 @@ type registerResponse struct {
 	Err error `json:"error,omitempty"`
 }
 
-func makeRegisterEndpoint(s Service) endpoint.Endpoint {
+func makeChallengeEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(registerRequest)
-		err := s.Register(req.cID)
-		return registerResponse{Err: err}, nil
+		req := request.(challengeRequest)
+
+		// TODO: should be stored within session
+		ski := new(big.Int)
+		ski.SetString(os.Getenv("SKi"), 16)
+
+		// verify MAC of request
+		r, err := s.Challenge(ski, req.g, req.q)
+		return challengeResponse{r: r, Err: err}, nil
 	}
 }
 
-type verifyRequest struct {
+type challengeRequest struct {
 	g *big.Int
 	q *big.Int
 }
 
-type verifyResponse struct {
+type challengeResponse struct {
 	r   *big.Int
 	Err error `json:"error,omitempty"`
+}
+
+func makeMetadataEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		_ = request.(metadataRequest)
+		// verify MAC of request
+		domains, err := s.GetMetadata()
+		return metadataResponse{domains: domains, Err: err}, nil
+	}
 }
 
 type metadataRequest struct {
@@ -75,23 +96,44 @@ type metadataResponse struct {
 	Err     error `json:"error,omitempty"`
 }
 
-func makeVerifyEndpoint(s Service) endpoint.Endpoint {
+func makeAddEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(verifyRequest)
-
-		// TODO: should be stored within session
-		ski := new(big.Int)
-		ski.SetString(os.Getenv("SKi"), 16)
-
-		r, err := s.Verify(ski, req.g, req.q)
-		return verifyResponse{r: r, Err: err}, nil
+		req := request.(addRequest)
+		// verify MAC of request
+		err := s.Add(req.domain)
+		return addResponse{Err: err}, nil
 	}
 }
 
-func makeMetadataEndpoint(s Service) endpoint.Endpoint {
+type addRequest struct {
+	domain string
+}
+
+type addResponse struct {
+	Err error `json:"error,omitempty"`
+}
+
+func makeGetEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(metadataRequest)
-		domains, err := s.GetMetadata(req.cID, req.mac)
-		return metadataResponse{domains: domains, Err: err}, nil
+		req := request.(getRequest)
+		// verify MAC of request
+		bj, qj, err := s.Get(req.domain, req.bmk)
+		return getResponse{
+			bj:  bj,
+			qj:  qj,
+			Err: err}, nil
 	}
 }
+
+type getRequest struct {
+	domain string
+	bmk    *big.Int
+}
+
+type getResponse struct {
+	bj  *big.Int
+	qj  *big.Int
+	Err error
+}
+
+func (r expKResponse) error() error { return r.Err }

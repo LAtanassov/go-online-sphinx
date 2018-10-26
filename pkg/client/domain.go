@@ -8,7 +8,8 @@ import (
 type Domain struct {
 }
 
-// Session ...
+// Session contains cryptographical key material used to associate
+// several HTTP request with an authenticated user.
 type Session struct {
 	ski  *big.Int
 	mk   *big.Int

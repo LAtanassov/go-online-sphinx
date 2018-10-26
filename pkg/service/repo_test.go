@@ -15,10 +15,15 @@ func TestUserRepository_Add(t *testing.T) {
 		}
 	})
 
-	t.Run("should return error if an existing user is added again", func(t *testing.T) {
+	t.Run("should return error if an user already exists", func(t *testing.T) {
 		r := NewUserRepository()
-		r.Add(User{cID: big.NewInt(1)})
+		// given
 		err := r.Add(User{cID: big.NewInt(1)})
+		if err != nil {
+			t.Errorf("UserRepository.Add() error = %v", err)
+		}
+		// when
+		err = r.Add(User{cID: big.NewInt(1)})
 		if err != ErrUserAlreadyExists {
 			t.Errorf("UserRepository.Add() error = %v wantErr = %v", err, ErrUserAlreadyExists)
 		}
@@ -26,11 +31,12 @@ func TestUserRepository_Add(t *testing.T) {
 
 	t.Run("should return an existing user", func(t *testing.T) {
 		r := NewUserRepository()
+		// given
 		err := r.Add(User{cID: big.NewInt(1)})
 		if err != nil {
 			t.Errorf("UserRepository.Add() error = %v", err)
 		}
-
+		// when
 		u, err := r.Get(big.NewInt(1).Text(16))
 		if err != nil {
 			t.Errorf("UserRepository.Get() error = %v", err)
@@ -48,7 +54,6 @@ func TestUserRepository_Add(t *testing.T) {
 		if err != ErrUserNotFound {
 			t.Errorf("UserRepository.Get() error = %v wantError = %v", err, ErrUserNotFound)
 		}
-
 	})
 }
 
@@ -56,20 +61,21 @@ func TestVaultRepository_Add(t *testing.T) {
 
 	t.Run("should add new vault", func(t *testing.T) {
 		r := NewVaultRepository()
-		err := r.Add("d", Vault{})
+		err := r.Add("domain", Vault{})
 		if err != nil {
 			t.Errorf("VaultRepository.Add() error = %v", err)
 		}
 	})
 
-	t.Run("should return error if an existing vault is added again", func(t *testing.T) {
+	t.Run("should return error if a vault already exists", func(t *testing.T) {
 		r := NewVaultRepository()
-		err := r.Add("d", Vault{})
+		// given
+		err := r.Add("domain", Vault{})
 		if err != nil {
 			t.Errorf("VaultRepository.Add() error = %v", err)
 		}
-
-		err = r.Add("d", Vault{})
+		// when
+		err = r.Add("domain", Vault{})
 		if err != ErrVaultAlreadyExists {
 			t.Errorf("VaultRepository.Add() error = %v wantErr = %v", err, ErrVaultAlreadyExists)
 		}
@@ -77,23 +83,24 @@ func TestVaultRepository_Add(t *testing.T) {
 
 	t.Run("should return an existing vault", func(t *testing.T) {
 		r := NewVaultRepository()
-		err := r.Add("d", Vault{})
+		// given
+		err := r.Add("domain", Vault{})
 		if err != nil {
 			t.Errorf("VaultRepository.Add() error = %v", err)
 		}
-
-		_, err = r.Get("id")
+		// when
+		_, err = r.Get("domain")
 		if err != nil {
 			t.Errorf("VaultRepository.Get() error = %v", err)
 		}
 	})
 
-	t.Run("should return error if domain does not exist", func(t *testing.T) {
+	t.Run("should return error if vault does not exist", func(t *testing.T) {
 		r := NewVaultRepository()
 
 		_, err := r.Get("id")
 		if err != nil {
-			t.Errorf("DomainRepository.Get() error = %v", err)
+			t.Errorf("VaultRepository.Get() error = %v", err)
 		}
 	})
 }

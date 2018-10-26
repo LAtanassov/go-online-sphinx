@@ -10,9 +10,13 @@ Online SPHINX - inspired by [SPHINX](https://ieeexplore.ieee.org/document/798005
 
 ## Register phase
 
-1. User registers - generate on
+1. User registers by POST request, therefore it generates
    - client side: k_C
    - server side: k_0(S), Q_0, k_v, \delta k_C and key material for domain passwords
+
+tech. note:
+
+- rate limit needed, confirmation mail - (2 step registration process)
 
 ## Login Phase
 
@@ -20,6 +24,10 @@ Online SPHINX - inspired by [SPHINX](https://ieeexplore.ieee.org/document/798005
 
    - client sends cID, cNonce, b (blinded password), q (group)
    - server responds sID, sNonce, bd (b with server key), Q_0 and k_v
+
+tech note:
+
+- k_v is a secret - how is it shared with the client ?
 
 2. Key calculation
 
@@ -30,11 +38,8 @@ Online SPHINX - inspired by [SPHINX](https://ieeexplore.ieee.org/document/798005
    - client sends challenge
    - server returns response
 
-### Questions
+tech. note:
 
-SK_i = MAC_kv(cID | sID | cNonce | sNonce)
-
-- cID, sID, cNonce, sNonce are public
-- k_v is a secret but how is k_v shared between client and server ?
+- session via cookie over HTTPS needed - state between step 1. and step 3.
+- if cookie - do we need HMAC of requests anymore ?
 - Is MAC_kv secure => offline dictionary ?
-- SK_i is session key => means session ID, session store, TLS, secure Cookies,
