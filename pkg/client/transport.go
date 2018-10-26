@@ -6,48 +6,12 @@ import (
 	"math/big"
 )
 
-type registerRequest struct {
-	Username string `json:"username"`
-}
-
-type expKRequest struct {
-	CID    string `json:"cID"`
-	CNonce string `json:"cNonce"`
-	B      string `json:"b"`
-	Q      string `json:"q"`
-}
-
-type expKResponse struct {
-	SID    string `json:"sID"`
-	SNonce string `json:"sNonce"`
-	BD     string `json:"bd"`
-	Q0     string `json:"Q0"`
-	KV     string `json:"kv"`
-	Err    error  `json:"error"`
-}
-
-type verifyRequest struct {
-	G string `json:"g"`
-	Q string `json:"q"`
-}
-
-type verifyResponse struct {
-	R   string `json:"r"`
-	Err error  `json:"error"`
-}
-
-type metadataRequest struct {
-	CID string `json:"cID"`
-	MAC string `json:"mac"`
-}
-
-type metadataResponse struct {
-	Domains []Domain `json:"domains"`
-	Err     error    `json:"error"`
-}
-
 func marshalRegisterRequest(username string) ([]byte, error) {
 	return json.Marshal(&registerRequest{Username: username})
+}
+
+type registerRequest struct {
+	Username string `json:"username"`
 }
 
 func marshalExpKRequest(cID, cNonce, b, q *big.Int) ([]byte, error) {
@@ -99,23 +63,39 @@ func marshalExpKResponse(sID, sNonce, bd, kv, q0 *big.Int) ([]byte, error) {
 	})
 }
 
-func marshalVerifyRequest(g, q *big.Int) ([]byte, error) {
-	return json.Marshal(&verifyRequest{
+type expKRequest struct {
+	CID    string `json:"cID"`
+	CNonce string `json:"cNonce"`
+	B      string `json:"b"`
+	Q      string `json:"q"`
+}
+
+type expKResponse struct {
+	SID    string `json:"sID"`
+	SNonce string `json:"sNonce"`
+	BD     string `json:"bd"`
+	Q0     string `json:"Q0"`
+	KV     string `json:"kv"`
+	Err    error  `json:"error"`
+}
+
+func marshalChallengeRequest(g, q *big.Int) ([]byte, error) {
+	return json.Marshal(&challengeRequest{
 		G: g.Text(16),
 		Q: q.Text(16),
 	})
 }
 
-func marshalVerifyResponse(r *big.Int, err error) ([]byte, error) {
-	return json.Marshal(&verifyResponse{
+func marshalChallengeResponse(r *big.Int, err error) ([]byte, error) {
+	return json.Marshal(&challengeResponse{
 		R:   r.Text(16),
 		Err: err,
 	})
 }
 
-func unmarsalVerifyResponse(rd io.Reader) (*big.Int, error) {
+func unmarsalChallengeResponse(rd io.Reader) (*big.Int, error) {
 
-	resp := verifyResponse{}
+	resp := challengeResponse{}
 	err := json.NewDecoder(rd).Decode(&resp)
 	if err != nil {
 		return nil, err
@@ -129,6 +109,16 @@ func unmarsalVerifyResponse(rd io.Reader) (*big.Int, error) {
 	r.SetString(resp.R, 16)
 
 	return r, nil
+}
+
+type challengeRequest struct {
+	G string `json:"g"`
+	Q string `json:"q"`
+}
+
+type challengeResponse struct {
+	R   string `json:"r"`
+	Err error  `json:"error"`
 }
 
 func marshalMetadataRequest(cID, mac string) ([]byte, error) {
@@ -158,4 +148,14 @@ func unmarsalMetadataResponse(r io.Reader) ([]Domain, error) {
 	}
 
 	return resp.Domains, nil
+}
+
+type metadataRequest struct {
+	CID string `json:"cID"`
+	MAC string `json:"mac"`
+}
+
+type metadataResponse struct {
+	Domains []Domain `json:"domains"`
+	Err     error    `json:"error"`
 }

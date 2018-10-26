@@ -12,11 +12,21 @@ import (
 	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 )
 
-// ErrRegistrationFailed ...
-var ErrRegistrationFailed = errors.New("registration failed")
+var (
+	// ErrRegistrationFailed ...
+	ErrRegistrationFailed = errors.New("registration failed")
+	// ErrAuthenticationFailed ...
+	ErrAuthenticationFailed = errors.New("authentication failed")
+)
 
-// ErrAuthenticationFailed ...
-var ErrAuthenticationFailed = errors.New("authentication failed")
+// New creates a new Online SPHINX Client.
+func New(pst Poster, cfg Configuration, repo Repository) *Client {
+	return &Client{
+		poster: pst,
+		config: cfg,
+		repo:   repo,
+	}
+}
 
 // Client represents an Online SPHINX Client
 type Client struct {
@@ -37,15 +47,6 @@ type Repository interface {
 	Get(username string) (User, error)
 }
 
-// New creates a new Online SPHINX Client.
-func New(pst Poster, cfg Configuration, repo Repository) *Client {
-	return &Client{
-		poster: pst,
-		config: cfg,
-		repo:   repo,
-	}
-}
-
 // Register will register a new user.
 func (clt *Client) Register(username string) error {
 
@@ -54,7 +55,6 @@ func (clt *Client) Register(username string) error {
 		return err
 	}
 
-	// TODO: later on registration might fail
 	err = clt.repo.Add(user)
 	if err != nil {
 		return err
@@ -117,8 +117,8 @@ func (clt *Client) Login(username, pwd string) error {
 	return nil
 }
 
-// Verify session key SKi
-func (clt *Client) Verify() error {
+// Challenge session key SKi
+func (clt *Client) Challenge() error {
 
 	if clt.session == nil {
 		return ErrAuthenticationFailed
@@ -129,7 +129,7 @@ func (clt *Client) Verify() error {
 		return err
 	}
 
-	challenge, err := marshalVerifyRequest(g, clt.session.user.q)
+	challenge, err := marshalChallengeRequest(g, clt.session.user.q)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (clt *Client) Verify() error {
 		return err
 	}
 
-	response, err := unmarsalVerifyResponse(r.Body)
+	response, err := unmarsalChallengeResponse(r.Body)
 	if err != nil {
 		return err
 	}
@@ -174,11 +174,12 @@ func (clt *Client) GetMetadata() ([]Domain, error) {
 }
 
 // Add ...
-func (clt *Client) Add() error {
+func (clt *Client) Add(domain string) error {
+
 	return nil
 }
 
 // Get ...
-func (clt *Client) Get() error {
+func (clt *Client) Get(domain string) error {
 	return nil
 }

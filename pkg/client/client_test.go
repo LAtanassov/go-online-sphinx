@@ -80,7 +80,7 @@ func TestClient_Login(t *testing.T) {
 
 }
 
-func TestClient_Verify(t *testing.T) {
+func TestClient_Challenge(t *testing.T) {
 	user, err := NewUser("username")
 	if err != nil {
 		t.Errorf("before test started - error = %v", err)
@@ -98,7 +98,7 @@ func TestClient_Verify(t *testing.T) {
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			n := big.NewInt(42)
-			buf, err := marshalVerifyResponse(n, nil)
+			buf, err := marshalChallengeResponse(n, nil)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
@@ -114,7 +114,7 @@ func TestClient_Verify(t *testing.T) {
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 
-		err = clt.Verify()
+		err = clt.Challenge()
 		if err != ErrAuthenticationFailed {
 			t.Errorf("Verify() error = %v wantErr = %v", err, ErrAuthenticationFailed)
 		}
