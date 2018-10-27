@@ -1,417 +1,269 @@
 package service
 
 import (
-	"context"
-	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"math/big"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
 
-	kitlog "github.com/go-kit/kit/log"
-	kithttp "github.com/go-kit/kit/transport/http"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
-// ErrUnexpectedType is returned after a type cast failed.
-var ErrUnexpectedType = errors.New("unexpected type")
+// TODO: not global and load key from ENV
+var (
+	key   = []byte("super-secret-key")
+	store = sessions.NewCookieStore(key)
+)
 
 // MakeRegisterHandler returns a handler
-func MakeRegisterHandler(s Service, logger kitlog.Logger) http.Handler {
+func MakeRegisterHandler(s Service) http.Handler {
 	r := mux.NewRouter()
 
-	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorLogger(logger),
-		kithttp.ServerErrorEncoder(encodeError),
-	}
+	r.HandleFunc("/v1/register", func(resp http.ResponseWriter, req *http.Request) {
+		regReq, err := contract.UnmarshalRegisterRequest(req.Body)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+		defer req.Body.Close()
 
-	registerHandler := kithttp.NewServer(
-		makeRegisterEndpoint(s),
-		decodeRegisterRequest,
-		encodeResponse,
-		opts...,
-	)
-
-	r.Handle("/v1/register", registerHandler).Methods("POST")
+		err = s.Register(regReq.CID)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+		resp.WriteHeader(http.StatusCreated)
+	}).Methods("POST")
 
 	return r
-}
-
-func decodeRegisterRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var body struct {
-		CID string `json:"CID"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-
-	cID := new(big.Int)
-	cID.SetString(body.CID, 16)
-
-	return registerRequest{
-		cID: cID,
-	}, nil
 }
 
 // MakeExpKHandler returns a handler for the handling service.
-func MakeExpKHandler(s Service, logger kitlog.Logger) http.Handler {
+func MakeExpKHandler(s Service) http.Handler {
 	r := mux.NewRouter()
+	r.HandleFunc("/v1/login/expk", func(resp http.ResponseWriter, req *http.Request) {
 
-	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorLogger(logger),
-		kithttp.ServerErrorEncoder(encodeError),
-		kithttp.ServerBefore(getOrCreateSession),
-		kithttp.ServerAfter(setSession),
-	}
+		session, err := store.Get(req, "online-sphinx")
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
 
-	expKHandler := kithttp.NewServer(
-		makeExpKEndpoint(s),
-		decodeExpKRequest,
-		encodeExpKResponse,
-		opts...,
-	)
+		expkReq, err := contract.UnmarshalExpKRequest(req.Body)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+		defer req.Body.Close()
 
-	r.Handle("/v1/login/expk", expKHandler).Methods("POST")
+		ski, sID, sNonce, bd, q0, kv, err := s.ExpK(expkReq.CID, expkReq.CNonce, expkReq.B, expkReq.Q)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+
+		resp.Header().Set("Content-Type", "application/json; charset=utf-8")
+		err = contract.MarshalExpKResponse(resp, contract.ExpKResponse{SID: sID, SNonce: sNonce, BD: bd, Q0: q0, KV: kv})
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+
+		session.Values["cID"] = expkReq.CID.Text(16)
+		session.Values["SKi"] = ski.Text(16)
+		session.Save(req, resp)
+
+	}).Methods("POST")
 
 	return r
-}
-
-func decodeExpKRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var body struct {
-		CID    string `json:"cID"`
-		CNonce string `json:"cNonce"`
-		B      string `json:"b"`
-		Q      string `json:"q"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-
-	cID := new(big.Int)
-	cID.SetString(body.CID, 16)
-
-	cNonce := new(big.Int)
-	cNonce.SetString(body.CNonce, 16)
-
-	b := new(big.Int)
-	b.SetString(body.B, 16)
-
-	q := new(big.Int)
-	q.SetString(body.Q, 16)
-
-	return expKRequest{
-		cID:    cID,
-		cNonce: cNonce,
-		b:      b,
-		q:      q,
-	}, nil
-}
-
-func encodeExpKResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if e, ok := response.(errorer); ok && e.error() != nil {
-		encodeError(ctx, e.error(), w)
-		return nil
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	r, ok := response.(expKResponse)
-	if !ok {
-		encodeError(ctx, ErrUnexpectedType, w)
-		return nil
-	}
-
-	body := struct {
-		SID    string `json:"sID"`
-		SNonce string `json:"sNonce"`
-		BD     string `json:"bd"`
-		Q0     string `json:"q0"`
-		KV     string `json:"kv"`
-		Err    error  `json:"error,omitempty"`
-	}{
-		r.sID.Text(16),
-		r.sNonce.Text(16),
-		r.bd.Text(16),
-		r.q0.Text(16),
-		r.kv.Text(16),
-		r.Err,
-	}
-
-	return json.NewEncoder(w).Encode(body)
 }
 
 // MakeChallengeHandler returns a handler for the handling service.
-func MakeChallengeHandler(s Service, logger kitlog.Logger) http.Handler {
+func MakeChallengeHandler(s Service) http.Handler {
 	r := mux.NewRouter()
+	r.HandleFunc("/v1/login/challenge", func(resp http.ResponseWriter, req *http.Request) {
 
-	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorLogger(logger),
-		kithttp.ServerErrorEncoder(encodeError),
-		kithttp.ServerBefore(getOrCreateSession),
-		kithttp.ServerAfter(setSession),
-	}
+		session, err := store.Get(req, "online-sphinx")
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
 
-	challengeHandler := kithttp.NewServer(
-		makeChallengeEndpoint(s),
-		decodeChallengeRequest,
-		encodeChallengeResponse,
-		opts...,
-	)
+		skiHex, ok := session.Values["SKi"].(string)
+		if !ok {
+			http.Error(resp, "Forbidden", http.StatusForbidden)
+			return
+		}
+		ski := new(big.Int)
+		ski.SetString(skiHex, 16)
 
-	r.Handle("/v1/login/challenge", challengeHandler).Methods("POST")
+		challReq, err := contract.UnmarshalChallengeRequest(req.Body)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+		defer req.Body.Close()
+
+		r, err := s.Challenge(ski, challReq.G, challReq.Q)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+
+		resp.Header().Set("Content-Type", "application/json; charset=utf-8")
+		err = contract.MarshalChallengeResponse(resp, contract.ChallengeResponse{R: r})
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+
+	}).Methods("POST")
 
 	return r
-}
-
-func decodeChallengeRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var body struct {
-		G string `json:"g"`
-		Q string `json:"q"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-
-	g := new(big.Int)
-	g.SetString(body.G, 16)
-
-	q := new(big.Int)
-	q.SetString(body.Q, 16)
-
-	return challengeRequest{
-		g: g,
-		q: q,
-	}, nil
-}
-
-func encodeChallengeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if err, ok := response.(errorer); ok && err.error() != nil {
-		encodeError(ctx, err.error(), w)
-		return nil
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	resp, ok := response.(challengeResponse)
-	if !ok {
-		encodeError(ctx, ErrUnexpectedType, w)
-		return nil
-	}
-
-	body := struct {
-		R   string `json:"r"`
-		Err error  `json:"error,omitempty"`
-	}{
-		resp.r.Text(16),
-		resp.Err,
-	}
-
-	return json.NewEncoder(w).Encode(body)
 }
 
 // MakeMetadataHandler ...
-func MakeMetadataHandler(s Service, logger kitlog.Logger) http.Handler {
+func MakeMetadataHandler(s Service) http.Handler {
 	r := mux.NewRouter()
+	r.HandleFunc("/v1/metadata", func(resp http.ResponseWriter, req *http.Request) {
 
-	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorLogger(logger),
-		kithttp.ServerErrorEncoder(encodeError),
-		kithttp.ServerBefore(getOrCreateSession),
-		kithttp.ServerAfter(setSession),
-	}
+		session, err := store.Get(req, "online-sphinx")
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
 
-	metadataHandler := kithttp.NewServer(
-		makeMetadataEndpoint(s),
-		decodeMetadataRequest,
-		encodeMetadataResponse,
-		opts...,
-	)
+		cIDHex, ok := session.Values["cID"].(string)
+		if !ok {
+			http.Error(resp, "Forbidden", http.StatusForbidden)
+			return
+		}
+		cID := new(big.Int)
+		cID.SetString(cIDHex, 16)
 
-	r.Handle("/v1/metadata", metadataHandler).Methods("GET")
+		metaReq, err := contract.UnmarshalMetadataRequest(req.Body)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+		defer req.Body.Close()
+
+		err = s.VerifyMAC(metaReq.MAC, cID, []byte("metadata"))
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+
+		domains, err := s.GetMetadata(cID)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+
+		resp.Header().Set("Content-Type", "application/json; charset=utf-8")
+		err = contract.MarshalMetadataResponse(resp, contract.MetadataResponse{Domains: domains})
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+
+	}).Methods("GET")
 
 	return r
-}
-
-func decodeMetadataRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var body struct {
-		CID string `json:"cID"`
-		MAC string `json:"mac"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-
-	cID := new(big.Int)
-	cID.SetString(body.CID, 16)
-
-	mac, err := hex.DecodeString(body.MAC)
-	if err != nil {
-		return nil, err
-	}
-
-	return metadataRequest{
-		cID: cID,
-		mac: mac,
-	}, nil
-}
-
-func encodeMetadataResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if err, ok := response.(errorer); ok && err.error() != nil {
-		encodeError(ctx, err.error(), w)
-		return nil
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	resp, ok := response.(metadataResponse)
-	if !ok {
-		encodeError(ctx, ErrUnexpectedType, w)
-		return nil
-	}
-
-	body := struct {
-		Domains []string `json:"domains"`
-		Err     error    `json:"error,omitempty"`
-	}{
-		resp.domains,
-		resp.Err,
-	}
-
-	return json.NewEncoder(w).Encode(body)
 }
 
 // MakeAddHandler ...
-func MakeAddHandler(s Service, logger kitlog.Logger) http.Handler {
+func MakeAddHandler(s Service) http.Handler {
 	r := mux.NewRouter()
+	r.HandleFunc("/v1/add", func(resp http.ResponseWriter, req *http.Request) {
 
-	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorLogger(logger),
-		kithttp.ServerErrorEncoder(encodeError),
-		kithttp.ServerBefore(getOrCreateSession),
-		kithttp.ServerAfter(setSession),
-	}
+		session, err := store.Get(req, "online-sphinx")
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
 
-	addHandler := kithttp.NewServer(
-		makeAddEndpoint(s),
-		decodeAddRequest,
-		encodeAddResponse,
-		opts...,
-	)
+		cIDHex, ok := session.Values["cID"].(string)
+		if !ok {
+			http.Error(resp, "Forbidden", http.StatusForbidden)
+			return
+		}
+		cID := new(big.Int)
+		cID.SetString(cIDHex, 16)
 
-	r.Handle("/v1/add", addHandler).Methods("POST")
+		addReq, err := contract.UnmarshalAddRequest(req.Body)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+		defer req.Body.Close()
+
+		err = s.VerifyMAC(addReq.MAC, cID, []byte(addReq.Domain))
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+
+		err = s.Add(cID, addReq.Domain)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+
+		resp.WriteHeader(http.StatusCreated)
+	}).Methods("POST")
 
 	return r
-}
-
-func decodeAddRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var body struct {
-		Domain string `json:"domain"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-
-	return addRequest{
-		domain: body.Domain,
-	}, nil
-}
-
-func encodeAddResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if err, ok := response.(errorer); ok && err.error() != nil {
-		encodeError(ctx, err.error(), w)
-		return nil
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	resp, ok := response.(addResponse)
-	if !ok {
-		encodeError(ctx, ErrUnexpectedType, w)
-		return nil
-	}
-
-	body := struct {
-		Err error `json:"error,omitempty"`
-	}{
-		resp.Err,
-	}
-
-	return json.NewEncoder(w).Encode(body)
 }
 
 // MakeGetHandler ...
-func MakeGetHandler(s Service, logger kitlog.Logger) http.Handler {
+func MakeGetHandler(s Service) http.Handler {
 	r := mux.NewRouter()
 
-	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorLogger(logger),
-		kithttp.ServerErrorEncoder(encodeError),
-		kithttp.ServerBefore(getOrCreateSession),
-		kithttp.ServerAfter(setSession),
-	}
+	r.HandleFunc("/v1/get", func(resp http.ResponseWriter, req *http.Request) {
+		session, err := store.Get(req, "online-sphinx")
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
 
-	addHandler := kithttp.NewServer(
-		makeGetEndpoint(s),
-		decodeGetRequest,
-		encodeGetResponse,
-		opts...,
-	)
+		cIDHex, ok := session.Values["cID"].(string)
+		if !ok {
+			http.Error(resp, "Forbidden", http.StatusForbidden)
+			return
+		}
+		cID := new(big.Int)
+		cID.SetString(cIDHex, 16)
 
-	r.Handle("/v1/get", addHandler).Methods("GET")
+		getReq, err := contract.UnmarshalGetRequest(req.Body)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+		defer req.Body.Close()
+
+		err = s.VerifyMAC(getReq.MAC, cID, []byte(getReq.Domain), []byte(getReq.BMK.Text(16)))
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+		bj, qj, err := s.Get(cID, getReq.Domain, getReq.BMK, getReq.Q)
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+
+		err = contract.MarshalGetResponse(resp, contract.GetResponse{Bj: bj, Qj: qj})
+		if err != nil {
+			encodeError(err, resp)
+			return
+		}
+
+	}).Methods("POST")
 
 	return r
-}
-
-func decodeGetRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var body struct {
-		Domain string `json:"domain"`
-		BMK    string `json:"bmk"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-
-	bmk := new(big.Int)
-	_, ok := bmk.SetString(body.BMK, 16)
-	if !ok {
-		return getRequest{}, ErrUnexpectedType
-	}
-
-	return getRequest{
-		domain: body.Domain,
-		bmk:    bmk,
-	}, nil
-}
-
-func encodeGetResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if err, ok := response.(errorer); ok && err.error() != nil {
-		encodeError(ctx, err.error(), w)
-		return nil
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	resp, ok := response.(addResponse)
-	if !ok {
-		encodeError(ctx, ErrUnexpectedType, w)
-		return nil
-	}
-
-	body := struct {
-		Err error `json:"error,omitempty"`
-	}{
-		resp.Err,
-	}
-
-	return json.NewEncoder(w).Encode(body)
 }
 
 // MakeAccessControl sets Header for access control
@@ -445,28 +297,7 @@ func MakeReadinessHandler() http.Handler {
 	})
 }
 
-func getOrCreateSession(ctx context.Context, r *http.Request) context.Context {
-	return ctx
-}
-
-func setSession(ctx context.Context, w http.ResponseWriter) context.Context {
-	return ctx
-}
-
-func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if e, ok := response.(errorer); ok && e.error() != nil {
-		encodeError(ctx, e.error(), w)
-		return nil
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	return json.NewEncoder(w).Encode(response)
-}
-
-type errorer interface {
-	error() error
-}
-
-func encodeError(_ context.Context, err error, w http.ResponseWriter) {
+func encodeError(err error, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	switch err {
 	case ErrInvalidArgument:

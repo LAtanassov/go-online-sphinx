@@ -44,6 +44,8 @@ type Configuration struct {
 	expkPath     string
 	verifyPath   string
 	metadataPath string
+	addPath      string
+	getPath      string
 }
 
 // NewConfiguration return default configuration.

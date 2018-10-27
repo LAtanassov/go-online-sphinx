@@ -9,11 +9,14 @@ import (
 	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 )
 
-// ErrInvalidArgument is returned when an invalid argument was passed.
-var ErrInvalidArgument = errors.New("invalid arguments")
-
-// ErrAuthorizationFailed is returned when authorization failue happend
-var ErrAuthorizationFailed = errors.New("authorization failed")
+var (
+	// ErrInvalidArgument is returned when an invalid argument was passed.
+	ErrInvalidArgument = errors.New("invalid arguments")
+	// ErrAuthorizationFailed is returned when authorization failue happend
+	ErrAuthorizationFailed = errors.New("authorization failed")
+	// ErrDomainNotFound is returned when an user ask for a domain that does not exists
+	ErrDomainNotFound = errors.New("domain not found")
+)
 
 var one = big.NewInt(1)
 var two = big.NewInt(2)
@@ -25,18 +28,18 @@ type Service interface {
 	ExpK(cID, cNonce, b, q *big.Int) (ski, sID, sNonce, bd, q0, kv *big.Int, err error)
 	Challenge(ski, g, q *big.Int) (r *big.Int, err error)
 
-	VerifyMAC(mac []byte, key []byte, data ...[]byte) error
+	VerifyMAC(mac []byte, cID *big.Int, data ...[]byte) error
 
-	GetMetadata() (domains []string, err error)
+	GetMetadata(cID *big.Int) (domains []string, err error)
 
-	Add(domain string) (err error)
-	Get(domain string, bmk *big.Int) (bj, qj *big.Int, err error)
+	Add(cID *big.Int, domain string) (err error)
+	Get(cID *big.Int, domain string, bmk *big.Int, q *big.Int) (bj, qj *big.Int, err error)
 }
 
 // UserRepository represents a store for user management - need to be implemented
 type UserRepository interface {
-	Add(u User) error
-	Get(ID string) (User, error)
+	Set(u User) error
+	Get(ID *big.Int) (User, error)
 }
 
 // VaultRepository represents a store for domain management - need to be implemented
@@ -49,15 +52,13 @@ type VaultRepository interface {
 // OnlineSphinx provides all operations needed.
 type OnlineSphinx struct {
 	users  UserRepository
-	vaults VaultRepository
 	config Configuration
 }
 
 // New returns an Online SPHINX service - to share - pointer.
-func New(users UserRepository, vaults VaultRepository, cfg Configuration) *OnlineSphinx {
+func New(users UserRepository, cfg Configuration) *OnlineSphinx {
 	return &OnlineSphinx{
 		users:  users,
-		vaults: vaults,
 		config: cfg,
 	}
 }
@@ -72,7 +73,11 @@ func (o *OnlineSphinx) Register(cID *big.Int) error {
 		return err
 	}
 
-	return o.users.Add(User{cID: cID, kv: kv})
+	return o.users.Set(User{
+		cID:    cID,
+		kv:     kv,
+		vaults: make(map[string]Vault),
+	})
 }
 
 // ExpK returns r**k mod |2q + 1|
@@ -90,7 +95,7 @@ func (o *OnlineSphinx) ExpK(cID, cNonce, b, q *big.Int) (ski, sID, sNonce, bd, q
 		return
 	}
 
-	u, err := o.users.Get(cID.Text(16))
+	u, err := o.users.Get(cID)
 	if err != nil {
 		return
 	}
@@ -108,15 +113,30 @@ func (o *OnlineSphinx) Challenge(ski, g, q *big.Int) (r *big.Int, err error) {
 }
 
 // GetMetadata verifies hmac and returns all domains associated with client ID
-func (o *OnlineSphinx) GetMetadata() (domains []string, err error) {
-	domains, err = o.vaults.GetDomains()
+func (o *OnlineSphinx) GetMetadata(cID *big.Int) (domains []string, err error) {
+	u, err := o.users.Get(cID)
+	if err != nil {
+		return nil, err
+	}
+	domains = make([]string, len(u.vaults))
+	var i int
+	for k := range u.vaults {
+		domains[i] = k
+		i++
+	}
+
 	return
 }
 
 // VerifyMAC verifies client request by calculating MAC of the request and
 // comparign it with the one send by the client
-func (o *OnlineSphinx) VerifyMAC(mac []byte, key []byte, data ...[]byte) error {
-	vmac := crypto.HmacData(o.config.hash, key, data...)
+func (o *OnlineSphinx) VerifyMAC(mac []byte, cID *big.Int, data ...[]byte) error {
+	u, err := o.users.Get(cID)
+	if err != nil {
+		return err
+	}
+
+	vmac := crypto.HmacData(o.config.hash, u.kv.Bytes(), data...)
 
 	if bytes.Compare(mac, vmac) != 0 {
 		return ErrAuthorizationFailed
@@ -125,7 +145,7 @@ func (o *OnlineSphinx) VerifyMAC(mac []byte, key []byte, data ...[]byte) error {
 }
 
 // Add by generating random keys k, qj for specific 'domain'
-func (o *OnlineSphinx) Add(domain string) (err error) {
+func (o *OnlineSphinx) Add(cID *big.Int, domain string) (err error) {
 
 	max := new(big.Int)
 	max.Exp(two, o.config.bits, nil)
@@ -140,25 +160,30 @@ func (o *OnlineSphinx) Add(domain string) (err error) {
 		return err
 	}
 
-	err = o.vaults.Add(domain, Vault{
-		k:  k,
-		qj: qj,
-	})
-
+	u, err := o.users.Get(cID)
 	if err != nil {
 		return err
 	}
+	u.vaults[domain] = Vault{
+		k:  k,
+		qj: qj,
+	}
 
-	return nil
+	return o.users.Set(u)
 }
 
 // Get return bmk**bj and qj associated with domain
-func (o *OnlineSphinx) Get(domain string, bmk *big.Int) (bj, qj *big.Int, err error) {
+func (o *OnlineSphinx) Get(cID *big.Int, domain string, bmk, q *big.Int) (bj, qj *big.Int, err error) {
 
-	v, err := o.vaults.Get(domain)
+	u, err := o.users.Get(cID)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return v.k, v.qj, nil
+	v, ok := u.vaults[domain]
+	if !ok {
+		return nil, nil, ErrDomainNotFound
+	}
+
+	return crypto.ExpInGroup(bmk, v.k, q), v.qj, nil
 }

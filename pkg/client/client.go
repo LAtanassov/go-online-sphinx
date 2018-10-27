@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
@@ -8,6 +9,8 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+
+	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 )
@@ -128,25 +131,28 @@ func (clt *Client) Challenge() error {
 	if err != nil {
 		return err
 	}
+	var buf bytes.Buffer
+	w := bufio.NewWriter(&buf)
+	err = contract.MarshalChallengeRequest(w, contract.ChallengeRequest{G: g, Q: clt.session.user.q})
+	if err != nil {
+		return err
+	}
+	w.Flush()
 
-	challenge, err := marshalChallengeRequest(g, clt.session.user.q)
+	rd := bufio.NewReader(&buf)
+	r, err := clt.poster.Post(clt.config.verifyPath, clt.config.contentType, rd)
 	if err != nil {
 		return err
 	}
 
-	r, err := clt.poster.Post(clt.config.verifyPath, clt.config.contentType, bytes.NewBuffer(challenge))
-	if err != nil {
-		return err
-	}
-
-	response, err := unmarsalChallengeResponse(r.Body)
+	response, err := contract.UnmarshalChallengeResponse(r.Body)
 	if err != nil {
 		return err
 	}
 	defer r.Body.Close()
 
 	verifier := crypto.ExpInGroup(g, clt.session.ski, clt.session.user.q)
-	if response.Cmp(verifier) != 0 {
+	if response.R.Cmp(verifier) != 0 {
 		return ErrAuthenticationFailed
 	}
 
@@ -175,6 +181,21 @@ func (clt *Client) GetMetadata() ([]Domain, error) {
 
 // Add ...
 func (clt *Client) Add(domain string) error {
+	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), clt.session.user.cID.Bytes(), []byte(domain))
+
+	var buf bytes.Buffer
+	w := bufio.NewWriter(&buf)
+	err := contract.MarshalAddRequest(w, contract.AddRequest{
+		Domain: domain,
+		MAC:    mac,
+	})
+	w.Flush()
+
+	rd := bufio.NewReader(&buf)
+	_, err = clt.poster.Post(clt.config.addPath, clt.config.contentType, rd)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

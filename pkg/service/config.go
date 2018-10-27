@@ -14,7 +14,7 @@ type Configuration struct {
 	bits *big.Int         // bits used in crypthographic directives
 }
 
-// NewConfiguration return Configuration
+// NewConfiguration initialize and returns a Configuration
 func NewConfiguration(sID, k, q0, bits *big.Int, hash func() hash.Hash) Configuration {
 	return Configuration{
 		sID:  sID,
