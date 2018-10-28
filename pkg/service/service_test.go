@@ -4,6 +4,8 @@ import (
 	"crypto/sha256"
 	"math/big"
 	"testing"
+
+	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
 )
 
 func TestOnlineSphinx_ExpK(t *testing.T) {
@@ -128,8 +130,8 @@ func TestOnlineSphinx_VerifyMAC(t *testing.T) {
 
 		err := s.VerifyMAC([]byte("mac"), cID, []byte("data"))
 
-		if err != ErrAuthorizationFailed {
-			t.Errorf("Service.AddVault() error = %v wantErr = %v", err, ErrAuthorizationFailed)
+		if err != contract.ErrAuthenticationFailed {
+			t.Errorf("Service.AddVault() error = %v wantErr = %v", err, contract.ErrAuthenticationFailed)
 		}
 	})
 }

@@ -6,10 +6,23 @@ import (
 	"errors"
 	"io"
 	"math/big"
+	"net/http"
 )
 
-// ErrUnexpectedType is returned after a type cast failed.
-var ErrUnexpectedType = errors.New("unexpected type")
+var (
+	// ErrInvalidArgument is returned when an invalid argument was passed.
+	ErrInvalidArgument = errors.New("invalid arguments")
+	// ErrAuthenticationFailed ...
+	ErrAuthenticationFailed = errors.New("authentication failed")
+	// ErrDomainNotFound is returned when an user ask for a domain that does not exists
+	ErrDomainNotFound = errors.New("domain not found")
+	// ErrRegistrationFailed ...
+	ErrRegistrationFailed = errors.New("registration failed")
+	// ErrAddVaultFailed ...
+	ErrAddVaultFailed = errors.New("add vault failed")
+	// ErrUnexpectedType is returned after a type cast failed.
+	ErrUnexpectedType = errors.New("unexpected type")
+)
 
 // MarshalRegisterRequest ...
 func MarshalRegisterRequest(w io.Writer, r RegisterRequest) error {
@@ -463,4 +476,43 @@ func UnmarshalGetResponse(r io.Reader) (GetResponse, error) {
 type GetResponse struct {
 	Bj *big.Int
 	Qj *big.Int
+}
+
+// MarshalError ...
+func MarshalError(w http.ResponseWriter, err error) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	switch err {
+	case ErrInvalidArgument:
+		w.WriteHeader(http.StatusBadRequest)
+	case ErrAuthenticationFailed:
+		w.WriteHeader(http.StatusForbidden)
+	default:
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	body := struct {
+		Err string `json:"error"`
+	}{
+		Err: err.Error(),
+	}
+
+	return json.NewEncoder(w).Encode(body)
+}
+
+// UnmarshalIfError ...
+func UnmarshalIfError(r *http.Response) error {
+
+	if r.StatusCode >= 300 {
+		var body struct {
+			Err string `json:"error"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			return err
+		}
+		defer r.Body.Close()
+
+		return errors.New(body.Err)
+	}
+
+	return nil
 }

@@ -8,8 +8,10 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"reflect"
 	"testing"
 
+	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	docker "github.com/docker/docker/client"
@@ -28,17 +30,17 @@ func TestITClient_Register(t *testing.T) {
 		}
 	})
 
-	t.Run("should be able to register an existing user ID", func(t *testing.T) {
+	t.Run("should not be able to register with an existing user ID", func(t *testing.T) {
 		clt := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}, NewInMemoryUserRepository())
+		// given
 		err := clt.Register("another-new-user")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
-
-		clt = New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}, NewInMemoryUserRepository())
+		// when
 		err = clt.Register("another-new-user")
-		if err == ErrRegistrationFailed {
-			t.Errorf("Register() error = %v wantErr = %v", err, ErrRegistrationFailed)
+		if err == nil {
+			t.Errorf("Register() error = %v wantErr = %v", err, contract.ErrRegistrationFailed)
 		}
 	})
 
@@ -56,12 +58,15 @@ func TestITClient_Login(t *testing.T) {
 	max.Exp(two, big.NewInt(int64(bits)), nil)
 
 	clt := New(&http.Client{}, Configuration{
-		hash:         sha256.New,
-		bits:         big.NewInt(int64(bits)),
-		baseURL:      baseURL,
-		registerPath: "/v1/register",
-		expkPath:     "/v1/login/expk",
-		verifyPath:   "/v1/login/verify",
+		hash:          sha256.New,
+		bits:          big.NewInt(int64(bits)),
+		baseURL:       baseURL,
+		registerPath:  "/v1/register",
+		expkPath:      "/v1/login/expk",
+		challengePath: "/v1/login/challenge",
+		metadataPath:  "/v1/metadata",
+		addPath:       "/v1/add",
+		getPath:       "/v1/get",
 	}, NewInMemoryUserRepository())
 
 	err := clt.Register("user")
@@ -77,21 +82,90 @@ func TestITClient_Login(t *testing.T) {
 		clt.Logout()
 	})
 
-	t.Run("should recv. common error if login failed because of wrong password", func(t *testing.T) {
+	t.Run("should recv. common error if wrong password", func(t *testing.T) {
 		err := clt.Login("user", "wrong-password")
-		if err == ErrAuthenticationFailed {
-			t.Errorf("Login() error = %v wantErr = %v", err, ErrAuthenticationFailed)
+		if err == nil {
+			t.Errorf("Login() error = %v wantErr = %v", err, contract.ErrAuthenticationFailed)
 		}
 		clt.Logout()
 	})
 
-	t.Run("should recv. error if configuration is invalid", func(t *testing.T) {
+	t.Run("should recv. common error if wrong username", func(t *testing.T) {
 		err := clt.Login("wrong-user", "password")
-		if err == ErrAuthenticationFailed {
-			t.Errorf("Login() error = %v wantErr = %v", err, ErrAuthenticationFailed)
+		if err == nil {
+			t.Errorf("Login() error = %v wantErr = %v", err, contract.ErrAuthenticationFailed)
 		}
 		clt.Logout()
 	})
+}
+
+func TestITClient_GetMetadata(t *testing.T) {
+
+	// often used big.Int
+	var two = big.NewInt(2)
+
+	baseURL := "http://localhost:8080"
+	bits := 8
+
+	max := new(big.Int)
+	max.Exp(two, big.NewInt(int64(bits)), nil)
+
+	clt := New(&http.Client{}, Configuration{
+		hash:          sha256.New,
+		bits:          big.NewInt(int64(bits)),
+		baseURL:       baseURL,
+		registerPath:  "/v1/register",
+		expkPath:      "/v1/login/expk",
+		challengePath: "/v1/login/challenge",
+		metadataPath:  "/v1/metadata",
+		addPath:       "/v1/add",
+		getPath:       "/v1/get",
+	}, NewInMemoryUserRepository())
+
+	err := clt.Register("user")
+	if err != nil {
+		t.Errorf("Register() error = %v", err)
+	}
+
+	t.Run("should have no domains", func(t *testing.T) {
+		err := clt.Login("user", "password")
+		if err != nil {
+			t.Errorf("Login() error = %v", err)
+		}
+
+		domains, err := clt.GetMetadata()
+		if err != nil {
+			t.Errorf("GetMetadata() error = %v", err)
+		}
+
+		if len(domains) != 0 {
+			t.Errorf("domains = %v wantDomains = %v", domains, []string{})
+		}
+	})
+
+	t.Run("should have google.com domain", func(t *testing.T) {
+		// given
+		wantDomains := []string{"google.com"}
+		err := clt.Login("user", "password")
+		if err != nil {
+			t.Errorf("Login() error = %v", err)
+		}
+		err = clt.Add(wantDomains[0])
+		if err != nil {
+			t.Errorf("Add() error = %v", err)
+		}
+
+		// when
+		domains, err := clt.GetMetadata()
+		if err != nil {
+			t.Errorf("GetMetadata() error = %v", err)
+		}
+
+		if !reflect.DeepEqual(domains, wantDomains) {
+			t.Errorf("domains = %v wantDomains = %v", domains, wantDomains)
+		}
+	})
+
 }
 
 func before(t *testing.T) string {

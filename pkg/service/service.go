@@ -3,19 +3,11 @@ package service
 import (
 	"bytes"
 	"crypto/rand"
-	"errors"
 	"math/big"
 
-	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
-)
+	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
 
-var (
-	// ErrInvalidArgument is returned when an invalid argument was passed.
-	ErrInvalidArgument = errors.New("invalid arguments")
-	// ErrAuthorizationFailed is returned when authorization failue happend
-	ErrAuthorizationFailed = errors.New("authorization failed")
-	// ErrDomainNotFound is returned when an user ask for a domain that does not exists
-	ErrDomainNotFound = errors.New("domain not found")
+	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 )
 
 var one = big.NewInt(1)
@@ -142,7 +134,7 @@ func (o *OnlineSphinx) VerifyMAC(mac []byte, cID *big.Int, data ...[]byte) error
 	vmac := crypto.HmacData(o.config.hash, u.kv.Bytes(), data...)
 
 	if bytes.Compare(mac, vmac) != 0 {
-		return ErrAuthorizationFailed
+		return contract.ErrAuthenticationFailed
 	}
 	return nil
 }
@@ -185,7 +177,7 @@ func (o *OnlineSphinx) Get(cID *big.Int, domain string, bmk, q *big.Int) (bj, qj
 
 	v, ok := u.vaults[domain]
 	if !ok {
-		return nil, nil, ErrDomainNotFound
+		return nil, nil, contract.ErrDomainNotFound
 	}
 
 	return crypto.ExpInGroup(bmk, v.k, q), v.qj, nil

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/rand"
-	"errors"
 	"io"
 	"math/big"
 	"net/http"
@@ -14,15 +13,6 @@ import (
 	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
-)
-
-var (
-	// ErrRegistrationFailed ...
-	ErrRegistrationFailed = errors.New("registration failed")
-	// ErrAddVaultFailed ...
-	ErrAddVaultFailed = errors.New("add vault failed")
-	// ErrAuthenticationFailed ...
-	ErrAuthenticationFailed = errors.New("authentication failed")
 )
 
 var two = big.NewInt(2)
@@ -79,8 +69,9 @@ func (clt *Client) Register(username string) error {
 		return err
 	}
 
-	if r.StatusCode != http.StatusCreated {
-		return ErrRegistrationFailed
+	err = contract.UnmarshalIfError(r)
+	if err != nil {
+		return err
 	}
 
 	err = clt.repo.Add(user)
@@ -139,6 +130,11 @@ func (clt *Client) Login(username, pwd string) error {
 		return err
 	}
 
+	err = contract.UnmarshalIfError(r)
+	if err != nil {
+		return err
+	}
+
 	expKResp, err := contract.UnmarshalExpKResponse(r.Body)
 	if err != nil {
 		return err
@@ -161,7 +157,7 @@ func (clt *Client) Login(username, pwd string) error {
 func (clt *Client) Challenge() error {
 
 	if clt.session == nil {
-		return ErrAuthenticationFailed
+		return contract.ErrAuthenticationFailed
 	}
 
 	g, err := rand.Int(rand.Reader, clt.session.user.q)
@@ -179,8 +175,13 @@ func (clt *Client) Challenge() error {
 	rd := bufio.NewReader(&buf)
 
 	u, err := url.Parse(clt.config.baseURL)
-	u.Path = path.Join(u.Path, clt.config.verifyPath)
+	u.Path = path.Join(u.Path, clt.config.challengePath)
 	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
+	if err != nil {
+		return err
+	}
+
+	err = contract.UnmarshalIfError(r)
 	if err != nil {
 		return err
 	}
@@ -193,7 +194,7 @@ func (clt *Client) Challenge() error {
 
 	verifier := crypto.ExpInGroup(g, clt.session.ski, clt.session.user.q)
 	if response.R.Cmp(verifier) != 0 {
-		return ErrAuthenticationFailed
+		return contract.ErrAuthenticationFailed
 	}
 
 	return nil
@@ -203,7 +204,7 @@ func (clt *Client) Challenge() error {
 func (clt *Client) GetMetadata() ([]string, error) {
 
 	if clt.session == nil {
-		return nil, ErrAuthenticationFailed
+		return nil, contract.ErrAuthenticationFailed
 	}
 
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), clt.session.user.cID.Bytes(), clt.session.sID.Bytes())
@@ -224,6 +225,11 @@ func (clt *Client) GetMetadata() ([]string, error) {
 		return nil, err
 	}
 
+	err = contract.UnmarshalIfError(r)
+	if err != nil {
+		return nil, err
+	}
+
 	metaResp, err := contract.UnmarshalMetadataResponse(r.Body)
 	if err != nil {
 		return nil, err
@@ -237,7 +243,7 @@ func (clt *Client) GetMetadata() ([]string, error) {
 func (clt *Client) Add(domain string) error {
 
 	if clt.session == nil {
-		return ErrAuthenticationFailed
+		return contract.ErrAuthenticationFailed
 	}
 
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), clt.session.user.cID.Bytes(), []byte(domain))
@@ -259,8 +265,13 @@ func (clt *Client) Add(domain string) error {
 		return err
 	}
 
+	err = contract.UnmarshalIfError(r)
+	if err != nil {
+		return err
+	}
+
 	if r.StatusCode != http.StatusCreated {
-		return ErrAddVaultFailed
+		return contract.ErrAddVaultFailed
 	}
 
 	return nil
@@ -270,7 +281,7 @@ func (clt *Client) Add(domain string) error {
 func (clt *Client) Get(domain string) (string, error) {
 
 	if clt.session == nil {
-		return "", ErrAuthenticationFailed
+		return "", contract.ErrAuthenticationFailed
 	}
 
 	k, err := rand.Int(rand.Reader, clt.session.user.q)
@@ -301,6 +312,11 @@ func (clt *Client) Get(domain string) (string, error) {
 	u, err := url.Parse(clt.config.baseURL)
 	u.Path = path.Join(u.Path, clt.config.getPath)
 	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
+	if err != nil {
+		return "", err
+	}
+
+	err = contract.UnmarshalIfError(r)
 	if err != nil {
 		return "", err
 	}

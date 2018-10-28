@@ -39,13 +39,14 @@ func TestClient_Register(t *testing.T) {
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusConflict)
+			contract.MarshalError(w, contract.ErrRegistrationFailed)
 		}))
 		defer ts.Close()
 
 		cfg.baseURL = ts.URL
 		err := New(http.DefaultClient, cfg, repo).Register("username")
-		if err != ErrRegistrationFailed {
-			t.Errorf("Register() error = %v wantErr = %v", err, ErrRegistrationFailed)
+		if err == nil {
+			t.Errorf("Register() error = %v wantErr = %v", err, contract.ErrRegistrationFailed)
 		}
 	})
 }
@@ -131,8 +132,8 @@ func TestClient_Challenge(t *testing.T) {
 		clt.session = NewSession(user, sID, ski, mk)
 
 		err = clt.Challenge()
-		if err != ErrAuthenticationFailed {
-			t.Errorf("Verify() error = %v wantErr = %v", err, ErrAuthenticationFailed)
+		if err != contract.ErrAuthenticationFailed {
+			t.Errorf("Verify() error = %v wantErr = %v", err, contract.ErrAuthenticationFailed)
 		}
 	})
 }

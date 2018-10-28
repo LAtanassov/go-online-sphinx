@@ -8,16 +8,16 @@ import (
 
 // Configuration ...
 type Configuration struct {
-	hash         func() hash.Hash
-	bits         *big.Int
-	contentType  string
-	baseURL      string
-	registerPath string
-	expkPath     string
-	verifyPath   string
-	metadataPath string
-	addPath      string
-	getPath      string
+	hash          func() hash.Hash
+	bits          *big.Int
+	contentType   string
+	baseURL       string
+	registerPath  string
+	expkPath      string
+	challengePath string
+	metadataPath  string
+	addPath       string
+	getPath       string
 }
 
 // NewConfiguration return default configuration.

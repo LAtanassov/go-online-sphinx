@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"math/big"
 	"net/http"
 
@@ -25,14 +24,14 @@ func MakeRegisterHandler(s Service) http.Handler {
 	r.HandleFunc("/v1/register", func(resp http.ResponseWriter, req *http.Request) {
 		regReq, err := contract.UnmarshalRegisterRequest(req.Body)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, contract.ErrInvalidArgument)
 			return
 		}
 		defer req.Body.Close()
 
 		err = s.Register(regReq.CID)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 		resp.WriteHeader(http.StatusCreated)
@@ -48,27 +47,27 @@ func MakeExpKHandler(s Service) http.Handler {
 
 		session, err := store.Get(req, "online-sphinx")
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
 			return
 		}
 
 		expkReq, err := contract.UnmarshalExpKRequest(req.Body)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, contract.ErrInvalidArgument)
 			return
 		}
 		defer req.Body.Close()
 
 		ski, sID, sNonce, bd, q0, kv, err := s.ExpK(expkReq.CID, expkReq.CNonce, expkReq.B, expkReq.Q)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 
 		resp.Header().Set("Content-Type", "application/json; charset=utf-8")
 		err = contract.MarshalExpKResponse(resp, contract.ExpKResponse{SID: sID, SNonce: sNonce, BD: bd, Q0: q0, KV: kv})
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 
@@ -88,13 +87,13 @@ func MakeChallengeHandler(s Service) http.Handler {
 
 		session, err := store.Get(req, "online-sphinx")
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
 			return
 		}
 
 		skiHex, ok := session.Values["SKi"].(string)
 		if !ok {
-			http.Error(resp, "Forbidden", http.StatusForbidden)
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
 			return
 		}
 		ski := new(big.Int)
@@ -102,21 +101,21 @@ func MakeChallengeHandler(s Service) http.Handler {
 
 		challReq, err := contract.UnmarshalChallengeRequest(req.Body)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 		defer req.Body.Close()
 
 		r, err := s.Challenge(ski, challReq.G, challReq.Q)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 
 		resp.Header().Set("Content-Type", "application/json; charset=utf-8")
 		err = contract.MarshalChallengeResponse(resp, contract.ChallengeResponse{R: r})
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 
@@ -132,13 +131,13 @@ func MakeMetadataHandler(s Service) http.Handler {
 
 		session, err := store.Get(req, "online-sphinx")
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
 			return
 		}
 
 		cIDHex, ok := session.Values["cID"].(string)
 		if !ok {
-			http.Error(resp, "Forbidden", http.StatusForbidden)
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
 			return
 		}
 		cID := new(big.Int)
@@ -146,27 +145,27 @@ func MakeMetadataHandler(s Service) http.Handler {
 
 		metaReq, err := contract.UnmarshalMetadataRequest(req.Body)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 		defer req.Body.Close()
 
 		err = s.VerifyMAC(metaReq.MAC, cID, []byte("metadata"))
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 
 		domains, err := s.GetMetadata(cID)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 
 		resp.Header().Set("Content-Type", "application/json; charset=utf-8")
 		err = contract.MarshalMetadataResponse(resp, contract.MetadataResponse{Domains: domains})
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 
@@ -182,13 +181,13 @@ func MakeAddHandler(s Service) http.Handler {
 
 		session, err := store.Get(req, "online-sphinx")
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
 			return
 		}
 
 		cIDHex, ok := session.Values["cID"].(string)
 		if !ok {
-			http.Error(resp, "Forbidden", http.StatusForbidden)
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
 			return
 		}
 		cID := new(big.Int)
@@ -196,20 +195,20 @@ func MakeAddHandler(s Service) http.Handler {
 
 		addReq, err := contract.UnmarshalAddRequest(req.Body)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, contract.ErrInvalidArgument)
 			return
 		}
 		defer req.Body.Close()
 
 		err = s.VerifyMAC(addReq.MAC, cID, []byte(addReq.Domain))
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 
 		err = s.Add(cID, addReq.Domain)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 
@@ -226,13 +225,13 @@ func MakeGetHandler(s Service) http.Handler {
 	r.HandleFunc("/v1/get", func(resp http.ResponseWriter, req *http.Request) {
 		session, err := store.Get(req, "online-sphinx")
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
 			return
 		}
 
 		cIDHex, ok := session.Values["cID"].(string)
 		if !ok {
-			http.Error(resp, "Forbidden", http.StatusForbidden)
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
 			return
 		}
 		cID := new(big.Int)
@@ -240,25 +239,25 @@ func MakeGetHandler(s Service) http.Handler {
 
 		getReq, err := contract.UnmarshalGetRequest(req.Body)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, contract.ErrInvalidArgument)
 			return
 		}
 		defer req.Body.Close()
 
 		err = s.VerifyMAC(getReq.MAC, cID, []byte(getReq.Domain), []byte(getReq.BMK.Text(16)))
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 		bj, qj, err := s.Get(cID, getReq.Domain, getReq.BMK, getReq.Q)
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 
 		err = contract.MarshalGetResponse(resp, contract.GetResponse{Bj: bj, Qj: qj})
 		if err != nil {
-			encodeError(err, resp)
+			contract.MarshalError(resp, err)
 			return
 		}
 
@@ -295,18 +294,5 @@ func MakeReadinessHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		w.Write([]byte("ok"))
-	})
-}
-
-func encodeError(err error, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	switch err {
-	case ErrInvalidArgument:
-		w.WriteHeader(http.StatusBadRequest)
-	default:
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"error": err.Error(),
 	})
 }
