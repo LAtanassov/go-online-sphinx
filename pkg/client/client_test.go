@@ -44,8 +44,8 @@ func TestClient_Register(t *testing.T) {
 
 		cfg.registerPath = ts.URL
 		err := New(http.DefaultClient, cfg, repo).Register("username")
-		if err != ErrUserAlreadyExists {
-			t.Errorf("Register() error = %v wantErr = %v", err, ErrUserAlreadyExists)
+		if err != ErrRegistrationFailed {
+			t.Errorf("Register() error = %v wantErr = %v", err, ErrRegistrationFailed)
 		}
 	})
 }
