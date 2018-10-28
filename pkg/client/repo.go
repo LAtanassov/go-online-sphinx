@@ -1,18 +1,28 @@
 package client
 
 import (
-	"crypto/sha256"
 	"errors"
-	"hash"
 	"math/big"
 	"sync"
 )
 
-// ErrUserAlreadyExists in repostory already
-var ErrUserAlreadyExists = errors.New("user already exists")
+var (
+	// ErrUserAlreadyExists in repostory already
+	ErrUserAlreadyExists = errors.New("user already exists")
+	// ErrUserNotFound in repostory
+	ErrUserNotFound = errors.New("user not found")
+)
 
-// ErrUserNotFound in repostory
-var ErrUserNotFound = errors.New("user not found")
+// UserRepository contains user specific configuration.
+// Adds new user to the repository when registered.
+// Load existing user from the repository before the login process.
+// UserRepository SHOULD be able to store this configuration as file ,
+// so that users can easily copy and transfer those files.
+// client.UserRepository is atm identical with server.UserRepository, but this might change in future
+type UserRepository struct {
+	mutex sync.Mutex
+	users map[string]User
+}
 
 // User specific configuration contains
 // a client ID and important login-specific variables like prime q and secret k.
@@ -32,39 +42,6 @@ func NewUser(username string) (User, error) {
 		k:        big.NewInt(42),
 		q:        big.NewInt(42),
 	}, nil
-}
-
-// Configuration ...
-type Configuration struct {
-	hash         func() hash.Hash
-	bits         *big.Int
-	contentType  string
-	baseURL      string
-	registerPath string
-	expkPath     string
-	verifyPath   string
-	metadataPath string
-	addPath      string
-	getPath      string
-}
-
-// NewConfiguration return default configuration.
-func NewConfiguration() Configuration {
-	return Configuration{
-		hash: sha256.New,
-		bits: big.NewInt(8),
-	}
-}
-
-// UserRepository contains user specific configuration.
-// Adds new user to the repository when registered.
-// Load existing user from the repository before the login process.
-// UserRepository SHOULD be able to store this configuration as file ,
-// so that users can easily copy and transfer those files.
-// client.UserRepository is atm identical with server.UserRepository, but this might change in future
-type UserRepository struct {
-	mutex sync.Mutex
-	users map[string]User
 }
 
 // NewInMemoryUserRepository return an in memory UserRepository.

@@ -17,9 +17,13 @@ import (
 var (
 	// ErrRegistrationFailed ...
 	ErrRegistrationFailed = errors.New("registration failed")
+	// ErrAddVaultFailed ...
+	ErrAddVaultFailed = errors.New("add vault failed")
 	// ErrAuthenticationFailed ...
 	ErrAuthenticationFailed = errors.New("authentication failed")
 )
+
+var two = big.NewInt(2)
 
 // New creates a new Online SPHINX Client.
 func New(pst Poster, cfg Configuration, repo Repository) *Client {
@@ -57,11 +61,6 @@ func (clt *Client) Register(username string) error {
 		return err
 	}
 
-	err = clt.repo.Add(user)
-	if err != nil {
-		return err
-	}
-
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
 	err = contract.MarshalRegisterRequest(w, contract.RegisterRequest{CID: user.cID})
@@ -79,6 +78,12 @@ func (clt *Client) Register(username string) error {
 	if r.StatusCode != http.StatusCreated {
 		return ErrRegistrationFailed
 	}
+
+	err = clt.repo.Add(user)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -91,10 +96,28 @@ func (clt *Client) Login(username, pwd string) error {
 	}
 
 	g := crypto.HashInGroup(pwd, clt.config.hash, user.q)
-	cNonce, b, kinv, err := crypto.Blind(g, user.q, clt.config.bits)
+
+	max := new(big.Int)
+	max.Exp(two, clt.config.bits, nil)
+
+	cNonce, err := rand.Int(rand.Reader, user.q)
 	if err != nil {
 		return err
 	}
+
+	k, err := rand.Int(rand.Reader, user.q)
+	if err != nil {
+		return err
+	}
+
+	kinv := new(big.Int)
+	kinv.ModInverse(k, user.q)
+
+	if kinv == nil {
+		kinv = big.NewInt(0)
+	}
+
+	b := crypto.ExpInGroup(g, k, user.q)
 
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
@@ -116,7 +139,8 @@ func (clt *Client) Login(username, pwd string) error {
 	}
 	defer r.Body.Close()
 
-	B0 := crypto.Unblind(expKResp.BD, kinv, user.q)
+	B0 := crypto.ExpInGroup(expKResp.BD, kinv, user.q)
+
 	SKi := new(big.Int)
 	SKi.SetBytes(crypto.HmacData(clt.config.hash, expKResp.KV.Bytes(), user.cID.Bytes(), expKResp.SID.Bytes(), cNonce.Bytes(), expKResp.SNonce.Bytes()))
 	mk := new(big.Int)
@@ -169,6 +193,10 @@ func (clt *Client) Challenge() error {
 // GetMetadata ...
 func (clt *Client) GetMetadata() ([]string, error) {
 
+	if clt.session == nil {
+		return nil, ErrAuthenticationFailed
+	}
+
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), clt.session.user.cID.Bytes(), clt.session.sID.Bytes())
 
 	var buf bytes.Buffer
@@ -190,12 +218,17 @@ func (clt *Client) GetMetadata() ([]string, error) {
 		return nil, err
 	}
 	defer r.Body.Close()
-
 	return metaResp.Domains, nil
+
 }
 
 // Add ...
 func (clt *Client) Add(domain string) error {
+
+	if clt.session == nil {
+		return ErrAuthenticationFailed
+	}
+
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), clt.session.user.cID.Bytes(), []byte(domain))
 
 	var buf bytes.Buffer
@@ -207,15 +240,64 @@ func (clt *Client) Add(domain string) error {
 	w.Flush()
 
 	rd := bufio.NewReader(&buf)
-	_, err = clt.poster.Post(clt.config.addPath, clt.config.contentType, rd)
+	r, err := clt.poster.Post(clt.config.addPath, clt.config.contentType, rd)
 	if err != nil {
 		return err
+	}
+
+	if r.StatusCode != http.StatusCreated {
+		return ErrAddVaultFailed
 	}
 
 	return nil
 }
 
 // Get ...
-func (clt *Client) Get(domain string) error {
-	return nil
+func (clt *Client) Get(domain string) (string, error) {
+
+	if clt.session == nil {
+		return "", ErrAuthenticationFailed
+	}
+
+	k, err := rand.Int(rand.Reader, clt.session.user.q)
+	if err != nil {
+		return "", err
+	}
+	kinv := new(big.Int)
+	kinv.ModInverse(k, clt.session.user.q)
+
+	if kinv == nil {
+		kinv = big.NewInt(0)
+	}
+
+	bmk := crypto.ExpInGroup(clt.session.mk, k, clt.session.user.q)
+
+	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), bmk.Bytes())
+
+	var buf bytes.Buffer
+	w := bufio.NewWriter(&buf)
+	err = contract.MarshalGetRequest(w, contract.GetRequest{
+		MAC: mac,
+		BMK: bmk,
+	})
+	w.Flush()
+
+	rd := bufio.NewReader(&buf)
+	r, err := clt.poster.Post(clt.config.getPath, clt.config.contentType, rd)
+	if err != nil {
+		return "", err
+	}
+
+	getResp, err := contract.UnmarshalGetResponse(r.Body)
+	if err != nil {
+		return "", err
+	}
+	defer r.Body.Close()
+
+	B0 := crypto.ExpInGroup(getResp.Bj, kinv, clt.session.user.q)
+
+	rwd := new(big.Int)
+	rwd.Mul(crypto.ExpInGroup(B0, clt.session.user.k, clt.session.user.q), getResp.Qj)
+
+	return rwd.Text(16), nil
 }

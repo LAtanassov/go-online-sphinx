@@ -67,34 +67,3 @@ func TestCrypto_HashInGroup(t *testing.T) {
 		})
 	}
 }
-
-func TestCrypto_Blind(t *testing.T) {
-	type args struct {
-		g    *big.Int
-		q    *big.Int
-		bits *big.Int
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr error
-	}{
-		{
-			"should blind g within group",
-			args{
-				g:    big.NewInt(42),
-				q:    big.NewInt(91),
-				bits: big.NewInt(8),
-			},
-			nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, _, _, err := Blind(tt.args.g, tt.args.q, tt.args.bits)
-			if err != tt.wantErr {
-				t.Errorf("Blind() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
