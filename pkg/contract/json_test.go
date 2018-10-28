@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestRegisterRequest(t *testing.T) {
+func TestUnmarshalRegisterRequest(t *testing.T) {
 	t.Run("marshal and unmarshal", func(t *testing.T) {
 		want := RegisterRequest{
 			CID: big.NewInt(1),
@@ -35,7 +35,7 @@ func TestRegisterRequest(t *testing.T) {
 	})
 }
 
-func TestExpKRequest(t *testing.T) {
+func TestUnmarshalExpKRequest(t *testing.T) {
 	t.Run("marshal and unmarshal", func(t *testing.T) {
 		want := ExpKRequest{
 			CID:    big.NewInt(1),
@@ -64,7 +64,7 @@ func TestExpKRequest(t *testing.T) {
 	})
 }
 
-func TestExpKResponse(t *testing.T) {
+func TestUnmarshalExpKResponse(t *testing.T) {
 	want := ExpKResponse{
 		SID:    big.NewInt(1),
 		SNonce: big.NewInt(2),
@@ -93,7 +93,7 @@ func TestExpKResponse(t *testing.T) {
 	}
 }
 
-func TestChallengeRequest(t *testing.T) {
+func TestUnmarshalChallengeRequest(t *testing.T) {
 	want := ChallengeRequest{
 		G: big.NewInt(1),
 		Q: big.NewInt(2),
@@ -119,7 +119,7 @@ func TestChallengeRequest(t *testing.T) {
 	}
 }
 
-func TestChallengeResponse(t *testing.T) {
+func TestUnmarshalChallengeResponse(t *testing.T) {
 	want := ChallengeResponse{
 		R: big.NewInt(1),
 	}
@@ -144,7 +144,7 @@ func TestChallengeResponse(t *testing.T) {
 	}
 }
 
-func TestMetadataRequest(t *testing.T) {
+func TestUnmarshalMetadataRequest(t *testing.T) {
 	want := MetadataRequest{
 		MAC: []byte("mac"),
 	}
@@ -169,7 +169,7 @@ func TestMetadataRequest(t *testing.T) {
 	}
 }
 
-func TestMetadataResponse(t *testing.T) {
+func TestUnmarshalMetadataResponse(t *testing.T) {
 	want := MetadataResponse{
 		Domains: []string{"domain"},
 	}
@@ -194,7 +194,7 @@ func TestMetadataResponse(t *testing.T) {
 	}
 }
 
-func TestAddRequest(t *testing.T) {
+func TestUnmarshalAddRequest(t *testing.T) {
 	want := AddRequest{
 		MAC:    []byte("mac"),
 		Domain: "domain",
@@ -220,7 +220,7 @@ func TestAddRequest(t *testing.T) {
 	}
 }
 
-func TestGetRequest(t *testing.T) {
+func TestUnmarshalGetRequest(t *testing.T) {
 	want := GetRequest{
 		MAC:    []byte("mac"),
 		Domain: "domain",
