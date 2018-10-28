@@ -241,8 +241,7 @@ func UnmarshalChallengeResponse(r io.Reader) (ChallengeResponse, error) {
 
 // ChallengeResponse ...
 type ChallengeResponse struct {
-	R   *big.Int
-	Err error `json:"error,omitempty"`
+	R *big.Int
 }
 
 // MarshalMetadataRequest ...

@@ -1,10 +1,14 @@
 package client
 
 import (
+	"bufio"
+	"bytes"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
 )
 
 func TestClient_Register(t *testing.T) {
@@ -59,14 +63,23 @@ func TestClient_Login(t *testing.T) {
 	t.Run("should login with password", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			n := big.NewInt(42)
-			buf, err := marshalExpKResponse(n, n, n, n, n)
+
+			var buf bytes.Buffer
+			wr := bufio.NewWriter(&buf)
+			err := contract.MarshalExpKResponse(wr, contract.ExpKResponse{
+				SID:    n,
+				SNonce: n,
+				BD:     n,
+				Q0:     n,
+				KV:     n})
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
+			wr.Flush()
 
 			w.WriteHeader(http.StatusOK)
-			w.Write(buf)
+			w.Write(buf.Bytes())
 		}))
 		defer ts.Close()
 
@@ -98,14 +111,18 @@ func TestClient_Challenge(t *testing.T) {
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			n := big.NewInt(42)
-			buf, err := marshalChallengeResponse(n, nil)
+
+			var buf bytes.Buffer
+			wr := bufio.NewWriter(&buf)
+			err := contract.MarshalChallengeResponse(wr, contract.ChallengeResponse{R: n})
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
+			wr.Flush()
 
 			w.WriteHeader(http.StatusOK)
-			w.Write(buf)
+			w.Write(buf.Bytes())
 		}))
 		defer ts.Close()
 
@@ -137,14 +154,17 @@ func TestClient_GetMetadata(t *testing.T) {
 	t.Run("should return domains", func(t *testing.T) {
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			buf, err := marshalMetadataResponse([]Domain{Domain{}}, nil)
+			var buf bytes.Buffer
+			wr := bufio.NewWriter(&buf)
+			err := contract.MarshalMetadataResponse(wr, contract.MetadataResponse{Domains: []string{"domain"}})
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
+			wr.Flush()
 
 			w.WriteHeader(http.StatusOK)
-			w.Write(buf)
+			w.Write(buf.Bytes())
 		}))
 		defer ts.Close()
 

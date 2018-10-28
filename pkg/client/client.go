@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"io"
 	"math/big"
@@ -63,12 +62,16 @@ func (clt *Client) Register(username string) error {
 		return err
 	}
 
-	buf, err := marshalRegisterRequest(username)
+	var buf bytes.Buffer
+	w := bufio.NewWriter(&buf)
+	err = contract.MarshalRegisterRequest(w, contract.RegisterRequest{CID: user.cID})
 	if err != nil {
 		return err
 	}
+	w.Flush()
+	rd := bufio.NewReader(&buf)
 
-	r, err := clt.poster.Post(clt.config.registerPath, clt.config.contentType, bytes.NewBuffer(buf))
+	r, err := clt.poster.Post(clt.config.registerPath, clt.config.contentType, rd)
 	if err != nil {
 		return err
 	}
@@ -93,29 +96,33 @@ func (clt *Client) Login(username, pwd string) error {
 		return err
 	}
 
-	buf, err := marshalExpKRequest(user.cID, cNonce, b, user.q)
+	var buf bytes.Buffer
+	w := bufio.NewWriter(&buf)
+	err = contract.MarshalExpKRequest(w, contract.ExpKRequest{CID: user.cID, CNonce: cNonce, B: b, Q: user.q})
+	if err != nil {
+		return err
+	}
+	w.Flush()
+	rd := bufio.NewReader(&buf)
+
+	r, err := clt.poster.Post(clt.config.expkPath, clt.config.contentType, rd)
 	if err != nil {
 		return err
 	}
 
-	r, err := clt.poster.Post(clt.config.expkPath, clt.config.contentType, bytes.NewBuffer(buf))
-	if err != nil {
-		return err
-	}
-
-	sID, sNonce, bd, kv, q0, err := unmarsalExpKResponse(r.Body)
+	expKResp, err := contract.UnmarshalExpKResponse(r.Body)
 	if err != nil {
 		return err
 	}
 	defer r.Body.Close()
 
-	B0 := crypto.Unblind(bd, kinv, user.q)
+	B0 := crypto.Unblind(expKResp.BD, kinv, user.q)
 	SKi := new(big.Int)
-	SKi.SetBytes(crypto.HmacData(clt.config.hash, kv.Bytes(), user.cID.Bytes(), sID.Bytes(), cNonce.Bytes(), sNonce.Bytes()))
+	SKi.SetBytes(crypto.HmacData(clt.config.hash, expKResp.KV.Bytes(), user.cID.Bytes(), expKResp.SID.Bytes(), cNonce.Bytes(), expKResp.SNonce.Bytes()))
 	mk := new(big.Int)
-	mk.Mul(crypto.ExpInGroup(B0, user.k, user.q), q0)
+	mk.Mul(crypto.ExpInGroup(B0, user.k, user.q), expKResp.Q0)
 
-	clt.session = NewSession(user, sID, SKi, mk)
+	clt.session = NewSession(user, expKResp.SID, SKi, mk)
 
 	return nil
 }
@@ -160,23 +167,31 @@ func (clt *Client) Challenge() error {
 }
 
 // GetMetadata ...
-func (clt *Client) GetMetadata() ([]Domain, error) {
+func (clt *Client) GetMetadata() ([]string, error) {
 
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), clt.session.user.cID.Bytes(), clt.session.sID.Bytes())
-	req, err := marshalMetadataRequest(clt.session.user.cID.Text(16), hex.EncodeToString(mac))
 
-	r, err := clt.poster.Post(clt.config.metadataPath, clt.config.contentType, bytes.NewBuffer(req))
+	var buf bytes.Buffer
+	w := bufio.NewWriter(&buf)
+	err := contract.MarshalMetadataRequest(w, contract.MetadataRequest{MAC: mac})
+	if err != nil {
+		return nil, err
+	}
+	w.Flush()
+	rd := bufio.NewReader(&buf)
+
+	r, err := clt.poster.Post(clt.config.metadataPath, clt.config.contentType, rd)
 	if err != nil {
 		return nil, err
 	}
 
-	domains, err := unmarsalMetadataResponse(r.Body)
+	metaResp, err := contract.UnmarshalMetadataResponse(r.Body)
 	if err != nil {
 		return nil, err
 	}
 	defer r.Body.Close()
 
-	return domains, nil
+	return metaResp.Domains, nil
 }
 
 // Add ...
