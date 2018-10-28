@@ -12,6 +12,7 @@ import (
 )
 
 // TODO: not global and load key from ENV
+// refactoring necessary to increase testability
 var (
 	key   = []byte("super-secret-key")
 	store = sessions.NewCookieStore(key)
@@ -169,7 +170,7 @@ func MakeMetadataHandler(s Service) http.Handler {
 			return
 		}
 
-	}).Methods("GET")
+	}).Methods("POST")
 
 	return r
 }
