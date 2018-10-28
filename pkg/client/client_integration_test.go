@@ -4,7 +4,6 @@ package client
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"math/big"
 	"net/http"
@@ -17,32 +16,35 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
-func TestClient_Register(t *testing.T) {
+func TestITClient_Register(t *testing.T) {
 
 	baseURL := "http://localhost:8080"
 
 	t.Run("should register a new user ID", func(t *testing.T) {
-		err := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}).Register("new-user", "password")
+		clt := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}, NewInMemoryUserRepository())
+		err := clt.Register("new-user")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
 	})
 
 	t.Run("should be able to register an existing user ID", func(t *testing.T) {
-		err := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}).Register("another-new-user", "password")
+		clt := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}, NewInMemoryUserRepository())
+		err := clt.Register("another-new-user")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
 
-		err = New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}).Register("another-new-user", "password")
-		if err == ErrUserNotCreated {
-			t.Errorf("Register() error = %v wantErr = %v", err, ErrUserNotCreated)
+		clt = New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}, NewInMemoryUserRepository())
+		err = clt.Register("another-new-user")
+		if err == ErrRegistrationFailed {
+			t.Errorf("Register() error = %v wantErr = %v", err, ErrRegistrationFailed)
 		}
 	})
 
 }
 
-func TestClient_Login(t *testing.T) {
+func TestITClient_Login(t *testing.T) {
 
 	// often used big.Int
 	var two = big.NewInt(2)
@@ -53,52 +55,42 @@ func TestClient_Login(t *testing.T) {
 	max := new(big.Int)
 	max.Exp(two, big.NewInt(int64(bits)), nil)
 
-	k, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		t.Errorf("error: %s", err)
-	}
-
-	q, err := rand.Prime(rand.Reader, bits)
-	if err != nil {
-		t.Errorf("error: %s", err)
-	}
-
-	c := New(&http.Client{}, configuration{
+	clt := New(&http.Client{}, Configuration{
 		hash:         sha256.New,
 		bits:         big.NewInt(int64(bits)),
 		baseURL:      baseURL,
 		registerPath: "/v1/register",
 		expkPath:     "/v1/login/expk",
 		verifyPath:   "/v1/login/verify",
-	})
+	}, NewInMemoryUserRepository())
 
-	err = c.Register("user", "password")
+	err := clt.Register("user")
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
 
 	t.Run("should login with an valid password", func(t *testing.T) {
-		err := c.Login("user", "password")
+		err := clt.Login("user", "password")
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
-		c.Logout()
+		clt.Logout()
 	})
 
 	t.Run("should recv. common error if login failed because of wrong password", func(t *testing.T) {
-		err := c.Login("user", "wrong-password")
+		err := clt.Login("user", "wrong-password")
 		if err == ErrAuthenticationFailed {
 			t.Errorf("Login() error = %v wantErr = %v", err, ErrAuthenticationFailed)
 		}
-		c.Logout()
+		clt.Logout()
 	})
 
 	t.Run("should recv. error if configuration is invalid", func(t *testing.T) {
-		err := c.Login("wrong-user", "password")
+		err := clt.Login("wrong-user", "password")
 		if err == ErrAuthenticationFailed {
 			t.Errorf("Login() error = %v wantErr = %v", err, ErrAuthenticationFailed)
 		}
-		c.Logout()
+		clt.Logout()
 	})
 }
 

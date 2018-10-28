@@ -12,7 +12,6 @@ import (
 	"syscall"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/service"
-
 	"github.com/go-kit/kit/log"
 )
 
@@ -49,6 +48,7 @@ func main() {
 
 	var svc service.Service
 	svc = service.New(users, cfg)
+	svc = service.NewLoggingMiddleware(log.With(logger, "component", "online-sphinx"))(svc)
 
 	mux := http.NewServeMux()
 

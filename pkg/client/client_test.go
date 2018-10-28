@@ -23,7 +23,7 @@ func TestClient_Register(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cfg.registerPath = ts.URL
+		cfg.baseURL = ts.URL
 		err := New(http.DefaultClient, cfg, repo).Register("username")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
@@ -42,7 +42,7 @@ func TestClient_Register(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cfg.registerPath = ts.URL
+		cfg.baseURL = ts.URL
 		err := New(http.DefaultClient, cfg, repo).Register("username")
 		if err != ErrRegistrationFailed {
 			t.Errorf("Register() error = %v wantErr = %v", err, ErrRegistrationFailed)
@@ -83,7 +83,7 @@ func TestClient_Login(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cfg.expkPath = ts.URL
+		cfg.baseURL = ts.URL
 		err := New(http.DefaultClient, cfg, repo).Login("username", "password")
 
 		if err != nil {
@@ -126,8 +126,7 @@ func TestClient_Challenge(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cfg.verifyPath = ts.URL
-
+		cfg.baseURL = ts.URL
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 
@@ -168,7 +167,7 @@ func TestClient_GetMetadata(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		cfg.metadataPath = ts.URL
+		cfg.baseURL = ts.URL
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 

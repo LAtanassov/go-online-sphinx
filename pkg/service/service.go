@@ -36,6 +36,9 @@ type Service interface {
 	Get(cID *big.Int, domain string, bmk *big.Int, q *big.Int) (bj, qj *big.Int, err error)
 }
 
+// Middleware is a chainable behavior modifier for Service.
+type Middleware func(Service) Service
+
 // UserRepository represents a store for user management - need to be implemented
 type UserRepository interface {
 	Set(u User) error

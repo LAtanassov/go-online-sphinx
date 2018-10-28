@@ -8,6 +8,8 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+	"net/url"
+	"path"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
 
@@ -70,7 +72,9 @@ func (clt *Client) Register(username string) error {
 	w.Flush()
 	rd := bufio.NewReader(&buf)
 
-	r, err := clt.poster.Post(clt.config.registerPath, clt.config.contentType, rd)
+	u, err := url.Parse(clt.config.baseURL)
+	u.Path = path.Join(u.Path, clt.config.registerPath)
+	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
 		return err
 	}
@@ -128,7 +132,9 @@ func (clt *Client) Login(username, pwd string) error {
 	w.Flush()
 	rd := bufio.NewReader(&buf)
 
-	r, err := clt.poster.Post(clt.config.expkPath, clt.config.contentType, rd)
+	u, err := url.Parse(clt.config.baseURL)
+	u.Path = path.Join(u.Path, clt.config.expkPath)
+	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
 		return err
 	}
@@ -171,7 +177,10 @@ func (clt *Client) Challenge() error {
 	w.Flush()
 
 	rd := bufio.NewReader(&buf)
-	r, err := clt.poster.Post(clt.config.verifyPath, clt.config.contentType, rd)
+
+	u, err := url.Parse(clt.config.baseURL)
+	u.Path = path.Join(u.Path, clt.config.verifyPath)
+	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
 		return err
 	}
@@ -208,7 +217,9 @@ func (clt *Client) GetMetadata() ([]string, error) {
 	w.Flush()
 	rd := bufio.NewReader(&buf)
 
-	r, err := clt.poster.Post(clt.config.metadataPath, clt.config.contentType, rd)
+	u, err := url.Parse(clt.config.baseURL)
+	u.Path = path.Join(u.Path, clt.config.metadataPath)
+	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +251,10 @@ func (clt *Client) Add(domain string) error {
 	w.Flush()
 
 	rd := bufio.NewReader(&buf)
-	r, err := clt.poster.Post(clt.config.addPath, clt.config.contentType, rd)
+
+	u, err := url.Parse(clt.config.baseURL)
+	u.Path = path.Join(u.Path, clt.config.addPath)
+	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
 		return err
 	}
@@ -283,7 +297,10 @@ func (clt *Client) Get(domain string) (string, error) {
 	w.Flush()
 
 	rd := bufio.NewReader(&buf)
-	r, err := clt.poster.Post(clt.config.getPath, clt.config.contentType, rd)
+
+	u, err := url.Parse(clt.config.baseURL)
+	u.Path = path.Join(u.Path, clt.config.getPath)
+	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
 		return "", err
 	}
@@ -300,4 +317,9 @@ func (clt *Client) Get(domain string) (string, error) {
 	rwd.Mul(crypto.ExpInGroup(B0, clt.session.user.k, clt.session.user.q), getResp.Qj)
 
 	return rwd.Text(16), nil
+}
+
+// Logout ...
+func (clt *Client) Logout() {
+	clt.session = &Session{}
 }
