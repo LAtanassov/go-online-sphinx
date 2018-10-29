@@ -1,6 +1,7 @@
 package client
 
 import (
+	"crypto/rand"
 	"errors"
 	"math/big"
 	"sync"
@@ -34,13 +35,26 @@ type User struct {
 }
 
 // NewUser generates new user with username.
-func NewUser(username string) (User, error) {
-	// TODO: generate keys here
+func NewUser(username string, bits int) (User, error) {
+	q, err := rand.Prime(rand.Reader, bits)
+	if err != nil {
+		return User{}, err
+	}
+
+	cID, err := rand.Int(rand.Reader, q)
+	if err != nil {
+		return User{}, err
+	}
+
+	k, err := rand.Int(rand.Reader, q)
+	if err != nil {
+		return User{}, err
+	}
 	return User{
 		username: username,
-		cID:      big.NewInt(42),
-		k:        big.NewInt(42),
-		q:        big.NewInt(42),
+		cID:      cID,
+		k:        k,
+		q:        q,
 	}, nil
 }
 

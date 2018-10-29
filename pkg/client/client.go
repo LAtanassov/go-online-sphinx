@@ -46,16 +46,11 @@ type Repository interface {
 }
 
 // Register will register a new user.
-func (clt *Client) Register(username string) error {
-
-	user, err := NewUser(username)
-	if err != nil {
-		return err
-	}
+func (clt *Client) Register(user User) error {
 
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
-	err = contract.MarshalRegisterRequest(w, contract.RegisterRequest{CID: user.cID})
+	err := contract.MarshalRegisterRequest(w, contract.RegisterRequest{CID: user.cID})
 	if err != nil {
 		return err
 	}
@@ -91,9 +86,6 @@ func (clt *Client) Login(username, pwd string) error {
 	}
 
 	g := crypto.HashInGroup(pwd, clt.config.hash, user.q)
-
-	max := new(big.Int)
-	max.Exp(two, clt.config.bits, nil)
 
 	cNonce, err := rand.Int(rand.Reader, user.q)
 	if err != nil {

@@ -68,6 +68,11 @@ func (o *OnlineSphinx) Register(cID *big.Int) error {
 		return err
 	}
 
+	_, err = o.users.Get(cID)
+	if err != ErrUserNotFound {
+		return contract.ErrRegistrationFailed
+	}
+
 	return o.users.Set(User{
 		cID:    cID,
 		kv:     kv,

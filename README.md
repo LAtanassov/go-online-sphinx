@@ -38,6 +38,7 @@ tech. note:
 tech note:
 
 - k_v is a secret - how is it shared with the client ?
+- how does the user recognize wrong password ?
 
 2. Key calculation
 

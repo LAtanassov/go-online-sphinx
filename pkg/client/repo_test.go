@@ -7,7 +7,7 @@ import (
 func TestUserRepository_Add(t *testing.T) {
 	t.Run("should add new user", func(t *testing.T) {
 		repo := NewInMemoryUserRepository()
-		user, err := NewUser("username")
+		user, err := NewUser("username", 8)
 		if err != nil {
 			t.Errorf("NewUser() failed error = %v", err)
 		}
@@ -19,7 +19,7 @@ func TestUserRepository_Add(t *testing.T) {
 
 	t.Run("should return error if an existing user is added again", func(t *testing.T) {
 		repo := NewInMemoryUserRepository()
-		user, err := NewUser("username")
+		user, err := NewUser("username", 8)
 		if err != nil {
 			t.Errorf("NewUser() failed error = %v", err)
 		}
@@ -37,7 +37,7 @@ func TestUserRepository_Add(t *testing.T) {
 
 	t.Run("should return an existing user", func(t *testing.T) {
 		repo := NewInMemoryUserRepository()
-		expUser, err := NewUser("username")
+		expUser, err := NewUser("username", 8)
 		if err != nil {
 			t.Errorf("NewUser() failed error = %v", err)
 		}
@@ -47,7 +47,7 @@ func TestUserRepository_Add(t *testing.T) {
 			t.Errorf("InMemoryRepository.Add() error = %v", err)
 		}
 
-		actUser, err := repo.Get("username")
+		actUser, err := repo.Get(expUser.username)
 		if err != nil {
 			t.Errorf("InMemoryRepository.Get() error = %v", err)
 		}
