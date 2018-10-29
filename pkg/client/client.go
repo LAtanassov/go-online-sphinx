@@ -329,5 +329,5 @@ func (clt *Client) Get(domain string) (string, error) {
 
 // Logout ...
 func (clt *Client) Logout() {
-	clt.session = &Session{}
+	clt.session = nil
 }

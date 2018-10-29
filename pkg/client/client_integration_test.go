@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"math/big"
 	"net/http"
+	"net/http/cookiejar"
 	"os"
 	"reflect"
 	"testing"
@@ -24,7 +25,11 @@ func TestITClient_Register(t *testing.T) {
 
 	t.Run("should register a new user ID", func(t *testing.T) {
 		clt := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}, NewInMemoryUserRepository())
-		err := clt.Register("new-user")
+		user, err := NewUser("new-user", 8)
+		if err != nil {
+			t.Errorf("NewUser() error = %v", err)
+		}
+		err = clt.Register(user)
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
@@ -33,12 +38,13 @@ func TestITClient_Register(t *testing.T) {
 	t.Run("should not be able to register with an existing user ID", func(t *testing.T) {
 		clt := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}, NewInMemoryUserRepository())
 		// given
-		err := clt.Register("another-new-user")
+		user, _ := NewUser("another-new-user", 8)
+		err := clt.Register(user)
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
 		// when
-		err = clt.Register("another-new-user")
+		err = clt.Register(user)
 		if err == nil {
 			t.Errorf("Register() error = %v wantErr = %v", err, contract.ErrRegistrationFailed)
 		}
@@ -48,8 +54,12 @@ func TestITClient_Register(t *testing.T) {
 
 func TestITClient_Login(t *testing.T) {
 
-	// often used big.Int
 	var two = big.NewInt(2)
+
+	cookieJar, _ := cookiejar.New(nil)
+	client := &http.Client{
+		Jar: cookieJar,
+	}
 
 	baseURL := "http://localhost:8080"
 	bits := 8
@@ -57,9 +67,9 @@ func TestITClient_Login(t *testing.T) {
 	max := new(big.Int)
 	max.Exp(two, big.NewInt(int64(bits)), nil)
 
-	clt := New(&http.Client{}, Configuration{
+	clt := New(client, Configuration{
 		hash:          sha256.New,
-		bits:          big.NewInt(int64(bits)),
+		bits:          bits,
 		baseURL:       baseURL,
 		registerPath:  "/v1/register",
 		expkPath:      "/v1/login/expk",
@@ -69,13 +79,18 @@ func TestITClient_Login(t *testing.T) {
 		getPath:       "/v1/get",
 	}, NewInMemoryUserRepository())
 
-	err := clt.Register("user")
+	user, _ := NewUser("username", bits)
+	err := clt.Register(user)
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
 
-	t.Run("should login with an valid password", func(t *testing.T) {
-		err := clt.Login("user", "password")
+	t.Run("should login with a valid password", func(t *testing.T) {
+		err := clt.Login(user.username, "password")
+		if err != nil {
+			t.Errorf("Login() error = %v", err)
+		}
+		err = clt.Challenge()
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
@@ -83,17 +98,13 @@ func TestITClient_Login(t *testing.T) {
 	})
 
 	t.Run("should recv. common error if wrong password", func(t *testing.T) {
-		err := clt.Login("user", "wrong-password")
+		err := clt.Login(user.username, "wrong-password")
 		if err == nil {
 			t.Errorf("Login() error = %v wantErr = %v", err, contract.ErrAuthenticationFailed)
 		}
-		clt.Logout()
-	})
-
-	t.Run("should recv. common error if wrong username", func(t *testing.T) {
-		err := clt.Login("wrong-user", "password")
-		if err == nil {
-			t.Errorf("Login() error = %v wantErr = %v", err, contract.ErrAuthenticationFailed)
+		err = clt.Challenge()
+		if err != nil {
+			t.Errorf("Login() error = %v", err)
 		}
 		clt.Logout()
 	})
@@ -101,18 +112,17 @@ func TestITClient_Login(t *testing.T) {
 
 func TestITClient_GetMetadata(t *testing.T) {
 
-	// often used big.Int
-	var two = big.NewInt(2)
-
 	baseURL := "http://localhost:8080"
 	bits := 8
 
-	max := new(big.Int)
-	max.Exp(two, big.NewInt(int64(bits)), nil)
+	cookieJar, _ := cookiejar.New(nil)
+	client := &http.Client{
+		Jar: cookieJar,
+	}
 
-	clt := New(&http.Client{}, Configuration{
+	clt := New(client, Configuration{
 		hash:          sha256.New,
-		bits:          big.NewInt(int64(bits)),
+		bits:          bits,
 		baseURL:       baseURL,
 		registerPath:  "/v1/register",
 		expkPath:      "/v1/login/expk",
@@ -122,13 +132,14 @@ func TestITClient_GetMetadata(t *testing.T) {
 		getPath:       "/v1/get",
 	}, NewInMemoryUserRepository())
 
-	err := clt.Register("user")
+	user, _ := NewUser("metadata-user", bits)
+	err := clt.Register(user)
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
 
 	t.Run("should have no domains", func(t *testing.T) {
-		err := clt.Login("user", "password")
+		err := clt.Login(user.username, "password")
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
@@ -146,7 +157,7 @@ func TestITClient_GetMetadata(t *testing.T) {
 	t.Run("should have google.com domain", func(t *testing.T) {
 		// given
 		wantDomains := []string{"google.com"}
-		err := clt.Login("user", "password")
+		err := clt.Login(user.username, "password")
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}

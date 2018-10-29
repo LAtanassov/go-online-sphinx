@@ -64,16 +64,17 @@ func MakeExpKHandler(s Service) http.Handler {
 			return
 		}
 
+		session.Values["sID"] = sID.Text(16)
+		session.Values["cID"] = expkReq.CID.Text(16)
+		session.Values["SKi"] = ski.Text(16)
+		session.Save(req, resp)
+
 		resp.Header().Set("Content-Type", "application/json; charset=utf-8")
 		err = contract.MarshalExpKResponse(resp, contract.ExpKResponse{SID: sID, SNonce: sNonce, BD: bd, Q0: q0, KV: kv})
 		if err != nil {
 			contract.MarshalError(resp, err)
 			return
 		}
-
-		session.Values["cID"] = expkReq.CID.Text(16)
-		session.Values["SKi"] = ski.Text(16)
-		session.Save(req, resp)
 
 	}).Methods("POST")
 
@@ -143,7 +144,15 @@ func MakeMetadataHandler(s Service) http.Handler {
 		cID := new(big.Int)
 		cID.SetString(cIDHex, 16)
 
-		metaReq, err := contract.UnmarshalMetadataRequest(req.Body)
+		sIDHex, ok := session.Values["sID"].(string)
+		if !ok {
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			return
+		}
+		sID := new(big.Int)
+		sID.SetString(sIDHex, 16)
+
+		_, err = contract.UnmarshalMetadataRequest(req.Body)
 		if err != nil {
 			contract.MarshalError(resp, err)
 			return
