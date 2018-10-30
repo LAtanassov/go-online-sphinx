@@ -1,6 +1,6 @@
 # go-online-sphinx
 
-Online SPHINX - inspired by [SPHINX](https://ieeexplore.ieee.org/document/7980050)
+Online SPHINX - inspired by [SPHINX](https://ieeexplore.ieee.org/document/7980050)   
 DO NOT USE FOR PASSWORD MANAGEMENT  
 THIS IS A PROTOTYPE to evaluate the Online SPHINX protocol
 
