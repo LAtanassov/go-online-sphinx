@@ -152,7 +152,7 @@ func MakeMetadataHandler(s Service) http.Handler {
 		sID := new(big.Int)
 		sID.SetString(sIDHex, 16)
 
-		_, err = contract.UnmarshalMetadataRequest(req.Body)
+		metaReq, err := contract.UnmarshalMetadataRequest(req.Body)
 		if err != nil {
 			contract.MarshalError(resp, err)
 			return
