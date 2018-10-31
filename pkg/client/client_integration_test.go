@@ -179,6 +179,151 @@ func TestITClient_GetMetadata(t *testing.T) {
 
 }
 
+func TestITClient_Add(t *testing.T) {
+
+	baseURL := "http://localhost:8080"
+	bits := 8
+
+	cookieJar, _ := cookiejar.New(nil)
+	client := &http.Client{
+		Jar: cookieJar,
+	}
+
+	clt := New(client, Configuration{
+		hash:          sha256.New,
+		bits:          bits,
+		baseURL:       baseURL,
+		registerPath:  "/v1/register",
+		expkPath:      "/v1/login/expk",
+		challengePath: "/v1/login/challenge",
+		metadataPath:  "/v1/metadata",
+		addPath:       "/v1/add",
+		getPath:       "/v1/get",
+	}, NewInMemoryUserRepository())
+
+	user, _ := NewUser("metadata-user", bits)
+	err := clt.Register(user)
+	if err != nil {
+		t.Errorf("Register() error = %v", err)
+	}
+
+	t.Run("should add a new domain with name google.com", func(t *testing.T) {
+		// given
+		wantDomains := []string{"google.com"}
+		err := clt.Login(user.username, "password")
+		if err != nil {
+			t.Errorf("Login() error = %v", err)
+		}
+		err = clt.Add(wantDomains[0])
+		if err != nil {
+			t.Errorf("Add() error = %v", err)
+		}
+
+		// when
+		domains, err := clt.GetMetadata()
+		if err != nil {
+			t.Errorf("GetMetadata() error = %v", err)
+		}
+
+		if !reflect.DeepEqual(domains, wantDomains) {
+			t.Errorf("domains = %v wantDomains = %v", domains, wantDomains)
+		}
+	})
+
+}
+
+func TestITClient_Get(t *testing.T) {
+
+	baseURL := "http://localhost:8080"
+	bits := 8
+
+	cookieJar, _ := cookiejar.New(nil)
+	client := &http.Client{
+		Jar: cookieJar,
+	}
+
+	clt := New(client, Configuration{
+		hash:          sha256.New,
+		bits:          bits,
+		baseURL:       baseURL,
+		registerPath:  "/v1/register",
+		expkPath:      "/v1/login/expk",
+		challengePath: "/v1/login/challenge",
+		metadataPath:  "/v1/metadata",
+		addPath:       "/v1/add",
+		getPath:       "/v1/get",
+	}, NewInMemoryUserRepository())
+
+	user, _ := NewUser("metadata-user", bits)
+	err := clt.Register(user)
+	if err != nil {
+		t.Errorf("Register() error = %v", err)
+	}
+
+	t.Run("should get the same password within one session", func(t *testing.T) {
+		// given
+		domain := "google.com"
+		err := clt.Login(user.username, "password")
+		if err != nil {
+			t.Errorf("Login() error = %v", err)
+		}
+		err = clt.Add(domain)
+		if err != nil {
+			t.Errorf("Add() error = %v", err)
+		}
+
+		// when
+		pwda, err := clt.Get(domain)
+		if err != nil {
+			t.Errorf("Get() error = %v", err)
+		}
+
+		pwdb, err := clt.Get(domain)
+		if err != nil {
+			t.Errorf("Get() error = %v", err)
+		}
+
+		if !reflect.DeepEqual(pwda, pwdb) {
+			t.Errorf("pwda = %v pwdb = %v", pwda, pwdb)
+		}
+	})
+
+	t.Run("should get the same password from two different sessions", func(t *testing.T) {
+		// given
+		domain := "google.com"
+		err := clt.Login(user.username, "password")
+		if err != nil {
+			t.Errorf("Login() error = %v", err)
+		}
+		err = clt.Add(domain)
+		if err != nil {
+			t.Errorf("Add() error = %v", err)
+		}
+
+		// when
+		pwda, err := clt.Get(domain)
+		if err != nil {
+			t.Errorf("Get() error = %v", err)
+		}
+
+		clt.Logout()
+		err = clt.Login(user.username, "password")
+		if err != nil {
+			t.Errorf("Login() error = %v", err)
+		}
+
+		pwdb, err := clt.Get(domain)
+		if err != nil {
+			t.Errorf("Get() error = %v", err)
+		}
+
+		if !reflect.DeepEqual(pwda, pwdb) {
+			t.Errorf("pwda = %v pwdb = %v", pwda, pwdb)
+		}
+	})
+
+}
+
 func before(t *testing.T) string {
 	ctx := context.Background()
 	cli, err := docker.NewEnvClient()
