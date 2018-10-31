@@ -199,7 +199,7 @@ func (clt *Client) GetMetadata() ([]string, error) {
 		return nil, contract.ErrAuthenticationFailed
 	}
 
-	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), clt.session.user.cID.Bytes(), clt.session.sID.Bytes())
+	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), []byte("metadata"))
 
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
@@ -238,7 +238,7 @@ func (clt *Client) Add(domain string) error {
 		return contract.ErrAuthenticationFailed
 	}
 
-	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), clt.session.user.cID.Bytes(), []byte(domain))
+	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), []byte(domain))
 
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)

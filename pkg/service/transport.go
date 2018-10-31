@@ -144,13 +144,13 @@ func MakeMetadataHandler(s Service) http.Handler {
 		cID := new(big.Int)
 		cID.SetString(cIDHex, 16)
 
-		sIDHex, ok := session.Values["sID"].(string)
+		skiHex, ok := session.Values["SKi"].(string)
 		if !ok {
 			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
 			return
 		}
-		sID := new(big.Int)
-		sID.SetString(sIDHex, 16)
+		ski := new(big.Int)
+		ski.SetString(skiHex, 16)
 
 		metaReq, err := contract.UnmarshalMetadataRequest(req.Body)
 		if err != nil {
@@ -159,7 +159,7 @@ func MakeMetadataHandler(s Service) http.Handler {
 		}
 		defer req.Body.Close()
 
-		err = s.VerifyMAC(metaReq.MAC, cID, []byte("metadata"))
+		err = s.VerifyMAC(metaReq.MAC, ski, []byte("metadata"))
 		if err != nil {
 			contract.MarshalError(resp, err)
 			return
@@ -202,6 +202,14 @@ func MakeAddHandler(s Service) http.Handler {
 		cID := new(big.Int)
 		cID.SetString(cIDHex, 16)
 
+		skiHex, ok := session.Values["SKi"].(string)
+		if !ok {
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			return
+		}
+		ski := new(big.Int)
+		ski.SetString(skiHex, 16)
+
 		addReq, err := contract.UnmarshalAddRequest(req.Body)
 		if err != nil {
 			contract.MarshalError(resp, contract.ErrInvalidArgument)
@@ -209,7 +217,7 @@ func MakeAddHandler(s Service) http.Handler {
 		}
 		defer req.Body.Close()
 
-		err = s.VerifyMAC(addReq.MAC, cID, []byte(addReq.Domain))
+		err = s.VerifyMAC(addReq.MAC, ski, []byte(addReq.Domain))
 		if err != nil {
 			contract.MarshalError(resp, err)
 			return

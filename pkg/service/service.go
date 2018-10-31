@@ -130,13 +130,9 @@ func (o *OnlineSphinx) GetMetadata(cID *big.Int) (domains []string, err error) {
 
 // VerifyMAC verifies client request by calculating MAC of the request and
 // comparign it with the one send by the client
-func (o *OnlineSphinx) VerifyMAC(mac []byte, cID *big.Int, data ...[]byte) error {
-	u, err := o.users.Get(cID)
-	if err != nil {
-		return err
-	}
+func (o *OnlineSphinx) VerifyMAC(mac []byte, ski *big.Int, data ...[]byte) error {
 
-	vmac := crypto.HmacData(o.config.hash, u.kv.Bytes(), data...)
+	vmac := crypto.HmacData(o.config.hash, ski.Bytes(), data...)
 
 	if bytes.Compare(mac, vmac) != 0 {
 		return contract.ErrAuthenticationFailed

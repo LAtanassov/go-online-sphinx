@@ -76,12 +76,12 @@ func (s *loggingService) Challenge(ski, g, q *big.Int) (r *big.Int, err error) {
 	return s.Service.Challenge(ski, g, q)
 }
 
-func (s *loggingService) VerifyMAC(mac []byte, cID *big.Int, data ...[]byte) (err error) {
+func (s *loggingService) VerifyMAC(mac []byte, ski *big.Int, data ...[]byte) (err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "VerifyMAC",
 			"mac", mac,
-			"cID", cID.Text(16),
+			"ski", ski.Text(16),
 			"data", data,
 
 			"err", err,
@@ -90,7 +90,7 @@ func (s *loggingService) VerifyMAC(mac []byte, cID *big.Int, data ...[]byte) (er
 		)
 	}(time.Now())
 
-	return s.Service.VerifyMAC(mac, cID, data...)
+	return s.Service.VerifyMAC(mac, ski, data...)
 }
 
 func (s *loggingService) GetMetadata(cID *big.Int) (domains []string, err error) {
