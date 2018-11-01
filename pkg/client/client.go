@@ -294,8 +294,10 @@ func (clt *Client) Get(domain string) (string, error) {
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
 	err = contract.MarshalGetRequest(w, contract.GetRequest{
-		MAC: mac,
-		BMK: bmk,
+		Domain: domain,
+		MAC:    mac,
+		BMK:    bmk,
+		Q:      clt.session.user.q,
 	})
 	w.Flush()
 

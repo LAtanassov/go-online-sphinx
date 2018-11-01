@@ -82,7 +82,6 @@ func (s *loggingService) VerifyMAC(mac []byte, ski *big.Int, data ...[]byte) (er
 			"method", "VerifyMAC",
 			"mac", mac,
 			"ski", ski.Text(16),
-			"data", data,
 
 			"err", err,
 
@@ -99,7 +98,6 @@ func (s *loggingService) GetMetadata(cID *big.Int) (domains []string, err error)
 			"method", "GetMetadata",
 			"cID", cID.Text(16),
 
-			"domains", domains,
 			"err", err,
 
 			"took", time.Since(begin),

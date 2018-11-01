@@ -254,6 +254,14 @@ func MakeGetHandler(s Service) http.Handler {
 		cID := new(big.Int)
 		cID.SetString(cIDHex, 16)
 
+		skiHex, ok := session.Values["SKi"].(string)
+		if !ok {
+			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			return
+		}
+		ski := new(big.Int)
+		ski.SetString(skiHex, 16)
+
 		getReq, err := contract.UnmarshalGetRequest(req.Body)
 		if err != nil {
 			contract.MarshalError(resp, contract.ErrInvalidArgument)
@@ -261,7 +269,7 @@ func MakeGetHandler(s Service) http.Handler {
 		}
 		defer req.Body.Close()
 
-		err = s.VerifyMAC(getReq.MAC, cID, []byte(getReq.Domain), []byte(getReq.BMK.Text(16)))
+		err = s.VerifyMAC(getReq.MAC, ski, getReq.BMK.Bytes())
 		if err != nil {
 			contract.MarshalError(resp, err)
 			return
