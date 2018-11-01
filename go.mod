@@ -19,7 +19,7 @@ require (
 	github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/go-homedir v1.0.0
-	github.com/pkg/errors v0.8.0 // indirect
+	github.com/pkg/errors v0.8.0
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v0.9.0
 	github.com/prometheus/client_model v0.0.0-20180712105110-5c3871d89910 // indirect

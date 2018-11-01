@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
+	"github.com/pkg/errors"
 )
 
 func TestClient_Register(t *testing.T) {
@@ -23,11 +24,13 @@ func TestClient_Register(t *testing.T) {
 	}
 
 	t.Run("should register a new user", func(t *testing.T) {
+		// given
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusCreated)
 		}))
 		defer ts.Close()
 
+		// when
 		cfg.baseURL = ts.URL
 		err := New(http.DefaultClient, cfg, repo).Register(user)
 		if err != nil {
@@ -36,27 +39,31 @@ func TestClient_Register(t *testing.T) {
 
 		_, err = repo.Get(user.username)
 		if err != nil {
-			t.Errorf("Register() expect repo to return user but error = %v", err)
+			t.Errorf("Get() expect repo to return user but error = %v", err)
 		}
 	})
 
 	t.Run("should return an error if the user exists within Online SPHINX service", func(t *testing.T) {
-
+		// given
+		ErrTest := errors.New("unit test")
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusConflict)
-			contract.MarshalError(w, contract.ErrRegistrationFailed)
+			contract.MarshalError(w, ErrTest)
 		}))
 		defer ts.Close()
 
+		// when
 		cfg.baseURL = ts.URL
 		err := New(http.DefaultClient, cfg, repo).Register(user)
+
 		if err == nil {
-			t.Errorf("Register() error = %v wantErr = %v", err, contract.ErrRegistrationFailed)
+			t.Errorf("Register() error = %v wantErr = %v", err, ErrTest)
 		}
 	})
 }
 
 func TestClient_Login(t *testing.T) {
+	// before
 	user, err := NewUser("username", 8)
 	if err != nil {
 		t.Errorf("before test started - error = %v", err)
@@ -67,6 +74,7 @@ func TestClient_Login(t *testing.T) {
 	cfg := NewConfiguration()
 
 	t.Run("should login with password", func(t *testing.T) {
+		// when
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			n := big.NewInt(42)
 
@@ -89,17 +97,19 @@ func TestClient_Login(t *testing.T) {
 		}))
 		defer ts.Close()
 
+		// then
 		cfg.baseURL = ts.URL
 		err := New(http.DefaultClient, cfg, repo).Login("username", "password")
 
 		if err != nil {
-			t.Errorf("Register() error = %v", err)
+			t.Errorf("Login() error = %v", err)
 		}
 	})
 
 }
 
 func TestClient_Challenge(t *testing.T) {
+	// before
 	user, err := NewUser("username", 8)
 	if err != nil {
 		t.Errorf("before test started - error = %v", err)
@@ -114,7 +124,7 @@ func TestClient_Challenge(t *testing.T) {
 	mk := big.NewInt(10)
 
 	t.Run("should return an ErrAuthenticationFailed if challenge/respond is not correct", func(t *testing.T) {
-
+		// when
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			n := big.NewInt(42)
 
@@ -131,19 +141,20 @@ func TestClient_Challenge(t *testing.T) {
 			w.Write(buf.Bytes())
 		}))
 		defer ts.Close()
-
+		// when
 		cfg.baseURL = ts.URL
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 
 		err = clt.Challenge()
-		if err != contract.ErrAuthenticationFailed {
-			t.Errorf("Verify() error = %v wantErr = %v", err, contract.ErrAuthenticationFailed)
+		if errors.Cause(err) != contract.ErrAuthenticationFailed {
+			t.Errorf("Challenge() error = %v wantErr = %v", err, contract.ErrAuthenticationFailed)
 		}
 	})
 }
 
 func TestClient_GetMetadata(t *testing.T) {
+	// before
 	user, err := NewUser("username", 8)
 	if err != nil {
 		t.Errorf("before test started - error = %v", err)
@@ -157,7 +168,7 @@ func TestClient_GetMetadata(t *testing.T) {
 	mk := big.NewInt(10)
 
 	t.Run("should return domains", func(t *testing.T) {
-
+		// given
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var buf bytes.Buffer
 			wr := bufio.NewWriter(&buf)
@@ -172,7 +183,7 @@ func TestClient_GetMetadata(t *testing.T) {
 			w.Write(buf.Bytes())
 		}))
 		defer ts.Close()
-
+		// when
 		cfg.baseURL = ts.URL
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)

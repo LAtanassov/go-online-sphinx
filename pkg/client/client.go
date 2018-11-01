@@ -11,6 +11,7 @@ import (
 	"path"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
+	"github.com/pkg/errors"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 )
@@ -52,26 +53,29 @@ func (clt *Client) Register(user User) error {
 	w := bufio.NewWriter(&buf)
 	err := contract.MarshalRegisterRequest(w, contract.RegisterRequest{CID: user.cID})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to marshal RegisterRequest")
 	}
 	w.Flush()
 	rd := bufio.NewReader(&buf)
 
 	u, err := url.Parse(clt.config.baseURL)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse baseURL")
+	}
 	u.Path = path.Join(u.Path, clt.config.registerPath)
 	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to post RegisterRequest")
 	}
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to unmarshal error from response")
 	}
 
 	err = clt.repo.Add(user)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to add new user to repo")
 	}
 
 	return nil
@@ -82,19 +86,19 @@ func (clt *Client) Login(username, pwd string) error {
 
 	user, err := clt.repo.Get(username)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get user from repo")
 	}
 
 	g := crypto.HashInGroup(pwd, clt.config.hash, user.q)
 
 	cNonce, err := rand.Int(rand.Reader, user.q)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to generate random cNonce")
 	}
 
 	k, err := rand.Int(rand.Reader, user.q)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to generate random k")
 	}
 
 	kinv := new(big.Int)
@@ -110,26 +114,29 @@ func (clt *Client) Login(username, pwd string) error {
 	w := bufio.NewWriter(&buf)
 	err = contract.MarshalExpKRequest(w, contract.ExpKRequest{CID: user.cID, CNonce: cNonce, B: b, Q: user.q})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to marshal ExpKRequest")
 	}
 	w.Flush()
 	rd := bufio.NewReader(&buf)
 
 	u, err := url.Parse(clt.config.baseURL)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse baseURL")
+	}
 	u.Path = path.Join(u.Path, clt.config.expkPath)
 	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to post ExpKRequest")
 	}
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to unmarshal error")
 	}
 
 	expKResp, err := contract.UnmarshalExpKResponse(r.Body)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to unmarshal ExpKResponse")
 	}
 	defer r.Body.Close()
 
@@ -149,44 +156,47 @@ func (clt *Client) Login(username, pwd string) error {
 func (clt *Client) Challenge() error {
 
 	if clt.session == nil {
-		return contract.ErrAuthenticationFailed
+		return errors.Wrap(contract.ErrAuthenticationFailed, "client session missing")
 	}
 
 	g, err := rand.Int(rand.Reader, clt.session.user.q)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to generate random g")
 	}
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
 	err = contract.MarshalChallengeRequest(w, contract.ChallengeRequest{G: g, Q: clt.session.user.q})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to marshal ChallengeRequest")
 	}
 	w.Flush()
 
 	rd := bufio.NewReader(&buf)
 
 	u, err := url.Parse(clt.config.baseURL)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse baseURL")
+	}
 	u.Path = path.Join(u.Path, clt.config.challengePath)
 	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to post ChallengeRequest")
 	}
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to unmarshal error")
 	}
 
 	response, err := contract.UnmarshalChallengeResponse(r.Body)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to unmarshal ChallengeResponse")
 	}
 	defer r.Body.Close()
 
 	verifier := crypto.ExpInGroup(g, clt.session.ski, clt.session.user.q)
 	if response.R.Cmp(verifier) != 0 {
-		return contract.ErrAuthenticationFailed
+		return errors.Wrap(contract.ErrAuthenticationFailed, "challenge-response with session key ski failed")
 	}
 
 	return nil
@@ -196,7 +206,7 @@ func (clt *Client) Challenge() error {
 func (clt *Client) GetMetadata() ([]string, error) {
 
 	if clt.session == nil {
-		return nil, contract.ErrAuthenticationFailed
+		return nil, errors.Wrap(contract.ErrAuthenticationFailed, "client session missing")
 	}
 
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), []byte("metadata"))
@@ -205,7 +215,7 @@ func (clt *Client) GetMetadata() ([]string, error) {
 	w := bufio.NewWriter(&buf)
 	err := contract.MarshalMetadataRequest(w, contract.MetadataRequest{MAC: mac})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to marshal MetadataRequest")
 	}
 	w.Flush()
 	rd := bufio.NewReader(&buf)
@@ -214,17 +224,17 @@ func (clt *Client) GetMetadata() ([]string, error) {
 	u.Path = path.Join(u.Path, clt.config.metadataPath)
 	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to post MetadataRequest")
 	}
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to unmarshal error")
 	}
 
 	metaResp, err := contract.UnmarshalMetadataResponse(r.Body)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to unmarshal MetadataResponse")
 	}
 	defer r.Body.Close()
 	return metaResp.Domains, nil
@@ -235,7 +245,7 @@ func (clt *Client) GetMetadata() ([]string, error) {
 func (clt *Client) Add(domain string) error {
 
 	if clt.session == nil {
-		return contract.ErrAuthenticationFailed
+		return errors.Wrap(contract.ErrAuthenticationFailed, "client session missing")
 	}
 
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), []byte(domain))
@@ -247,6 +257,9 @@ func (clt *Client) Add(domain string) error {
 		MAC:    mac,
 	})
 	w.Flush()
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal AddRequest")
+	}
 
 	rd := bufio.NewReader(&buf)
 
@@ -254,16 +267,16 @@ func (clt *Client) Add(domain string) error {
 	u.Path = path.Join(u.Path, clt.config.addPath)
 	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to post AddRequest")
 	}
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to unmarshal error")
 	}
 
 	if r.StatusCode != http.StatusCreated {
-		return contract.ErrAddVaultFailed
+		return errors.Wrap(contract.ErrAddVaultFailed, "failed to add vault")
 	}
 
 	return nil
@@ -273,12 +286,12 @@ func (clt *Client) Add(domain string) error {
 func (clt *Client) Get(domain string) (string, error) {
 
 	if clt.session == nil {
-		return "", contract.ErrAuthenticationFailed
+		return "", errors.Wrap(contract.ErrAuthenticationFailed, "client session missing")
 	}
 
 	k, err := rand.Int(rand.Reader, clt.session.user.q)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to generate random k")
 	}
 	kinv := new(big.Int)
 	kinv.ModInverse(k, clt.session.user.q)
@@ -300,6 +313,9 @@ func (clt *Client) Get(domain string) (string, error) {
 		Q:      clt.session.user.q,
 	})
 	w.Flush()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshal GetRequest")
+	}
 
 	rd := bufio.NewReader(&buf)
 
@@ -307,17 +323,17 @@ func (clt *Client) Get(domain string) (string, error) {
 	u.Path = path.Join(u.Path, clt.config.getPath)
 	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to post GetRequest")
 	}
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to unmarshal error")
 	}
 
 	getResp, err := contract.UnmarshalGetResponse(r.Body)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to unmarshal GetResponse")
 	}
 	defer r.Body.Close()
 

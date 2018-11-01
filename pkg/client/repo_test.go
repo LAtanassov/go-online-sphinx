@@ -2,6 +2,8 @@ package client
 
 import (
 	"testing"
+
+	"github.com/pkg/errors"
 )
 
 func TestUserRepository_Add(t *testing.T) {
@@ -30,7 +32,7 @@ func TestUserRepository_Add(t *testing.T) {
 		}
 
 		err = repo.Add(user)
-		if err != ErrUserAlreadyExists {
+		if errors.Cause(err) != ErrUserAlreadyExists {
 			t.Errorf("InMemoryRepository.Add() error = %v wantErr = %v", err, ErrUserAlreadyExists)
 		}
 	})
@@ -62,7 +64,7 @@ func TestUserRepository_Get(t *testing.T) {
 	r := NewInMemoryUserRepository()
 
 	_, err := r.Get("username")
-	if err != ErrUserNotFound {
+	if errors.Cause(err) != ErrUserNotFound {
 		t.Errorf("InMemoryRepository.Get() error = %v wantError = %v", err, ErrUserNotFound)
 	}
 }

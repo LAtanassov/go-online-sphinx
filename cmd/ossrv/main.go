@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"flag"
+	"fmt"
 	"hash"
 	"math/big"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/service"
+	"github.com/pkg/errors"
 
 	kitlog "github.com/go-kit/kit/log"
 	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
@@ -52,7 +54,7 @@ func main() {
 	var c Configuration
 	err := envconfig.Process("ossrv", &c)
 	if err != nil {
-		logger.Log("err", err)
+		logger.Log("err", fmt.Sprintf("%+v", errors.Wrap(err, "failed to process environment variables")))
 		os.Exit(1)
 	}
 
@@ -127,7 +129,7 @@ func main() {
 		logger.Log("service", "started", "listening", httpAddr)
 		err := server.ListenAndServe()
 		if err != nil {
-			logger.Log("err", err)
+			logger.Log("err", fmt.Sprintf("%+v", errors.Wrap(err, "failed to start http service")))
 			os.Exit(1)
 		}
 	}(server)
@@ -143,7 +145,7 @@ func main() {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		logger.Log("err", err)
+		logger.Log("err", fmt.Sprintf("%+v", errors.Wrap(err, "failed to shutdown http service")))
 		os.Exit(1)
 	}
 

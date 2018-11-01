@@ -2,9 +2,10 @@ package client
 
 import (
 	"crypto/rand"
-	"errors"
 	"math/big"
 	"sync"
+
+	"github.com/pkg/errors"
 )
 
 var (
@@ -38,17 +39,17 @@ type User struct {
 func NewUser(username string, bits int) (User, error) {
 	q, err := rand.Prime(rand.Reader, bits)
 	if err != nil {
-		return User{}, err
+		return User{}, errors.Wrap(err, "failed to generate prime")
 	}
 
 	cID, err := rand.Int(rand.Reader, q)
 	if err != nil {
-		return User{}, err
+		return User{}, errors.Wrap(err, "failed to generate int")
 	}
 
 	k, err := rand.Int(rand.Reader, q)
 	if err != nil {
-		return User{}, err
+		return User{}, errors.Wrap(err, "failed to generate int")
 	}
 	return User{
 		username: username,
@@ -74,7 +75,7 @@ func (r *UserRepository) Add(u User) error {
 
 	_, ok := r.users[u.username]
 	if ok {
-		return ErrUserAlreadyExists
+		return errors.Wrap(ErrUserAlreadyExists, "failed to add user to map")
 	}
 
 	r.users[u.username] = u
@@ -88,7 +89,7 @@ func (r *UserRepository) Get(username string) (User, error) {
 
 	u, ok := r.users[username]
 	if !ok {
-		return User{}, ErrUserNotFound
+		return User{}, errors.Wrap(ErrUserNotFound, "failed to get user from map")
 	}
 	return u, nil
 }

@@ -1,6 +1,6 @@
 // +build integration
 
-package client
+package client_test
 
 import (
 	"context"
