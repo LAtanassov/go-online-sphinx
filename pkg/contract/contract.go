@@ -1,12 +1,14 @@
 package contract
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"io"
 	"math/big"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 var (
@@ -25,13 +27,17 @@ var (
 )
 
 // MarshalRegisterRequest ...
-func MarshalRegisterRequest(w io.Writer, r RegisterRequest) error {
+func MarshalRegisterRequest(r RegisterRequest) (io.Reader, error) {
 	body := struct {
 		CID string `json:"CID"`
 	}{
 		CID: r.CID.Text(16),
 	}
-	return json.NewEncoder(w).Encode(body)
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewBuffer(buf), nil
 }
 
 // UnmarshalRegisterRequest from json as byte array to struct
@@ -58,7 +64,7 @@ type RegisterRequest struct {
 }
 
 // MarshalExpKRequest ...
-func MarshalExpKRequest(w io.Writer, r ExpKRequest) error {
+func MarshalExpKRequest(r ExpKRequest) (io.Reader, error) {
 	body := struct {
 		CID    string
 		CNonce string
@@ -70,7 +76,12 @@ func MarshalExpKRequest(w io.Writer, r ExpKRequest) error {
 		B:      r.B.Text(16),
 		Q:      r.Q.Text(16),
 	}
-	return json.NewEncoder(w).Encode(body)
+
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewBuffer(buf), nil
 }
 
 // UnmarshalExpKRequest ...
@@ -182,7 +193,7 @@ type ExpKResponse struct {
 }
 
 // MarshalChallengeRequest ...
-func MarshalChallengeRequest(w io.Writer, r ChallengeRequest) error {
+func MarshalChallengeRequest(r ChallengeRequest) (io.Reader, error) {
 	body := struct {
 		G string
 		Q string
@@ -190,7 +201,11 @@ func MarshalChallengeRequest(w io.Writer, r ChallengeRequest) error {
 		G: r.G.Text(16),
 		Q: r.Q.Text(16),
 	}
-	return json.NewEncoder(w).Encode(body)
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewBuffer(buf), nil
 }
 
 // UnmarshalChallengeRequest ...
@@ -258,7 +273,7 @@ type ChallengeResponse struct {
 }
 
 // MarshalMetadataRequest ...
-func MarshalMetadataRequest(w io.Writer, r MetadataRequest) error {
+func MarshalMetadataRequest(r MetadataRequest) (io.Reader, error) {
 
 	body := struct {
 		MAC string `json:"mac"`
@@ -266,7 +281,11 @@ func MarshalMetadataRequest(w io.Writer, r MetadataRequest) error {
 		hex.EncodeToString(r.MAC),
 	}
 
-	return json.NewEncoder(w).Encode(body)
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewBuffer(buf), nil
 }
 
 // UnmarshalMetadataRequest ...
@@ -326,7 +345,7 @@ type MetadataResponse struct {
 }
 
 // MarshalAddRequest ...
-func MarshalAddRequest(w io.Writer, r AddRequest) error {
+func MarshalAddRequest(r AddRequest) (io.Reader, error) {
 	body := struct {
 		MAC    string `json:"mac"`
 		Domain string `json:"domain"`
@@ -335,7 +354,11 @@ func MarshalAddRequest(w io.Writer, r AddRequest) error {
 		r.Domain,
 	}
 
-	return json.NewEncoder(w).Encode(body)
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewBuffer(buf), nil
 }
 
 // UnmarshalAddRequest ...
@@ -367,7 +390,7 @@ type AddRequest struct {
 }
 
 // MarshalGetRequest ...
-func MarshalGetRequest(w io.Writer, r GetRequest) error {
+func MarshalGetRequest(r GetRequest) (io.Reader, error) {
 	body := struct {
 		MAC    string `json:"mac"`
 		Domain string `json:"domain"`
@@ -380,7 +403,11 @@ func MarshalGetRequest(w io.Writer, r GetRequest) error {
 		r.Q.Text(16),
 	}
 
-	return json.NewEncoder(w).Encode(body)
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewBuffer(buf), nil
 }
 
 // UnmarshalGetRequest ...

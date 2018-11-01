@@ -1,8 +1,6 @@
 package service
 
 import (
-	"bufio"
-	"bytes"
 	"crypto/sha256"
 	"math/big"
 	"net/http"
@@ -27,13 +25,12 @@ func TestMakeRegisterHandler(t *testing.T) {
 		ts := httptest.NewServer(MakeRegisterHandler(s))
 		defer ts.Close()
 
-		var buf bytes.Buffer
-		w := bufio.NewWriter(&buf)
-		contract.MarshalRegisterRequest(w, contract.RegisterRequest{CID: big.NewInt(1)})
-		w.Flush()
-		r := bufio.NewReader(&buf)
+		r, err := contract.MarshalRegisterRequest(contract.RegisterRequest{CID: big.NewInt(1)})
+		if err != nil {
+			t.Errorf("MarshalRegisterRequest() error = %v", err)
+		}
 
-		_, err := http.Post(ts.URL+"/v1/register", ct, r)
+		_, err = http.Post(ts.URL+"/v1/register", ct, r)
 		if err != nil {
 			t.Errorf("http.Post() error = %v", err)
 		}
@@ -56,18 +53,17 @@ func TestMakeExpKHandler(t *testing.T) {
 		ts := httptest.NewServer(MakeExpKHandler(s))
 		defer ts.Close()
 
-		var buf bytes.Buffer
-		w := bufio.NewWriter(&buf)
-		contract.MarshalExpKRequest(w, contract.ExpKRequest{
+		r, err := contract.MarshalExpKRequest(contract.ExpKRequest{
 			CID:    big.NewInt(1),
 			CNonce: big.NewInt(2),
 			B:      big.NewInt(3),
 			Q:      big.NewInt(4),
 		})
-		w.Flush()
-		r := bufio.NewReader(&buf)
+		if err != nil {
+			t.Errorf("contract.MarshalExpKRequest() error = %v", err)
+		}
 
-		_, err := http.Post(ts.URL+"/v1/login/expk", ct, r)
+		_, err = http.Post(ts.URL+"/v1/login/expk", ct, r)
 		if err != nil {
 			t.Errorf("http.Post() error = %v", err)
 		}
@@ -89,16 +85,15 @@ func TestMakeChallengeHandler(t *testing.T) {
 		ts := httptest.NewServer(MakeChallengeHandler(s))
 		defer ts.Close()
 
-		var buf bytes.Buffer
-		w := bufio.NewWriter(&buf)
-		contract.MarshalChallengeRequest(w, contract.ChallengeRequest{
+		r, err := contract.MarshalChallengeRequest(contract.ChallengeRequest{
 			G: big.NewInt(3),
 			Q: big.NewInt(4),
 		})
-		w.Flush()
-		r := bufio.NewReader(&buf)
+		if err != nil {
+			t.Errorf("contract.MarshalChallengeRequest() error = %v", err)
+		}
 
-		_, err := http.Post(ts.URL+"/v1/login/challenge", ct, r)
+		_, err = http.Post(ts.URL+"/v1/login/challenge", ct, r)
 		if err != nil {
 			t.Errorf("http.Post() error = %v", err)
 		}
@@ -120,15 +115,14 @@ func TestMakeMetadataHandler(t *testing.T) {
 		ts := httptest.NewServer(MakeMetadataHandler(s))
 		defer ts.Close()
 
-		var buf bytes.Buffer
-		w := bufio.NewWriter(&buf)
-		contract.MarshalMetadataRequest(w, contract.MetadataRequest{
+		r, err := contract.MarshalMetadataRequest(contract.MetadataRequest{
 			MAC: []byte("mac"),
 		})
-		w.Flush()
-		r := bufio.NewReader(&buf)
+		if err != nil {
+			t.Errorf("contract.MarshalMetadataRequest() error = %v", err)
+		}
 
-		_, err := http.Post(ts.URL+"/v1/metadata", ct, r)
+		_, err = http.Post(ts.URL+"/v1/metadata", ct, r)
 		if err != nil {
 			t.Errorf("http.Post() error = %v", err)
 		}
@@ -150,16 +144,15 @@ func TestMakeAddHandler(t *testing.T) {
 		ts := httptest.NewServer(MakeAddHandler(s))
 		defer ts.Close()
 
-		var buf bytes.Buffer
-		w := bufio.NewWriter(&buf)
-		contract.MarshalAddRequest(w, contract.AddRequest{
+		r, err := contract.MarshalAddRequest(contract.AddRequest{
 			MAC:    []byte("mac"),
 			Domain: "domain",
 		})
-		w.Flush()
-		r := bufio.NewReader(&buf)
+		if err != nil {
+			t.Errorf("contract.MarshalAddRequest() error = %v", err)
+		}
 
-		_, err := http.Post(ts.URL+"/v1/add", ct, r)
+		_, err = http.Post(ts.URL+"/v1/add", ct, r)
 		if err != nil {
 			t.Errorf("http.Post() error = %v", err)
 		}
@@ -181,18 +174,17 @@ func TestMakeGetHandler(t *testing.T) {
 		ts := httptest.NewServer(MakeGetHandler(s))
 		defer ts.Close()
 
-		var buf bytes.Buffer
-		w := bufio.NewWriter(&buf)
-		contract.MarshalGetRequest(w, contract.GetRequest{
+		r, err := contract.MarshalGetRequest(contract.GetRequest{
 			MAC:    []byte("mac"),
 			Domain: "domain",
 			BMK:    big.NewInt(1),
 			Q:      big.NewInt(2),
 		})
-		w.Flush()
-		r := bufio.NewReader(&buf)
+		if err != nil {
+			t.Errorf("contract.MarshalGetRequest() error = %v", err)
+		}
 
-		_, err := http.Post(ts.URL+"/v1/get", ct, r)
+		_, err = http.Post(ts.URL+"/v1/get", ct, r)
 		if err != nil {
 			t.Errorf("http.Post() error = %v", err)
 		}

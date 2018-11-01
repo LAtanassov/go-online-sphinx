@@ -8,22 +8,32 @@ import (
 	"testing"
 )
 
+func TestMarshalRegisterRequest(t *testing.T) {
+	t.Run("should marshal", func(t *testing.T) {
+		want := RegisterRequest{
+			CID: big.NewInt(1),
+		}
+
+		_, err := MarshalRegisterRequest(want)
+		if err != nil {
+			t.Errorf("MarshalRegisterRequest() error = %v", err)
+			return
+		}
+	})
+}
+
 func TestUnmarshalRegisterRequest(t *testing.T) {
 	t.Run("should un/marshal", func(t *testing.T) {
 		want := RegisterRequest{
 			CID: big.NewInt(1),
 		}
 
-		var buf bytes.Buffer
-		w := bufio.NewWriter(&buf)
-		err := MarshalRegisterRequest(w, want)
+		r, err := MarshalRegisterRequest(want)
 		if err != nil {
 			t.Errorf("MarshalRegisterRequest() error = %v", err)
 			return
 		}
-		w.Flush()
 
-		r := bufio.NewReader(&buf)
 		got, err := UnmarshalRegisterRequest(r)
 		if err != nil {
 			t.Errorf("UnmarshalRegisterRequest() error = %v", err)
@@ -35,6 +45,23 @@ func TestUnmarshalRegisterRequest(t *testing.T) {
 	})
 }
 
+func TestMarshalExpKRequest(t *testing.T) {
+	t.Run("should marshal", func(t *testing.T) {
+		want := ExpKRequest{
+			CID:    big.NewInt(1),
+			CNonce: big.NewInt(2),
+			B:      big.NewInt(3),
+			Q:      big.NewInt(4),
+		}
+
+		_, err := MarshalExpKRequest(want)
+		if err != nil {
+			t.Errorf("MarshalExpKRequest() error = %v", err)
+			return
+		}
+
+	})
+}
 func TestUnmarshalExpKRequest(t *testing.T) {
 	t.Run("marshal and unmarshal", func(t *testing.T) {
 		want := ExpKRequest{
@@ -43,16 +70,13 @@ func TestUnmarshalExpKRequest(t *testing.T) {
 			B:      big.NewInt(3),
 			Q:      big.NewInt(4),
 		}
-		var buf bytes.Buffer
-		w := bufio.NewWriter(&buf)
-		err := MarshalExpKRequest(w, want)
+
+		r, err := MarshalExpKRequest(want)
 		if err != nil {
 			t.Errorf("MarshalExpKRequest() error = %v", err)
 			return
 		}
-		w.Flush()
 
-		r := bufio.NewReader(&buf)
 		got, err := UnmarshalExpKRequest(r)
 		if err != nil {
 			t.Errorf("UnmarshalExpKRequest() error = %v", err)
@@ -64,6 +88,25 @@ func TestUnmarshalExpKRequest(t *testing.T) {
 	})
 }
 
+func TestMarshalExpKResponse(t *testing.T) {
+	t.Run("should marshal", func(t *testing.T) {
+		want := ExpKResponse{
+			SID:    big.NewInt(1),
+			SNonce: big.NewInt(2),
+			BD:     big.NewInt(3),
+			Q0:     big.NewInt(4),
+			KV:     big.NewInt(5),
+		}
+		var buf bytes.Buffer
+		w := bufio.NewWriter(&buf)
+		err := MarshalExpKResponse(w, want)
+		if err != nil {
+			t.Errorf("MarshalExpKResponse() error = %v", err)
+			return
+		}
+		w.Flush()
+	})
+}
 func TestUnmarshalExpKResponse(t *testing.T) {
 	t.Run("should un/marshal", func(t *testing.T) {
 		want := ExpKResponse{
@@ -95,84 +138,139 @@ func TestUnmarshalExpKResponse(t *testing.T) {
 	})
 }
 
+func TestMarshalChallengeRequest(t *testing.T) {
+	t.Run("should marshal", func(t *testing.T) {
+		want := ChallengeRequest{
+			G: big.NewInt(1),
+			Q: big.NewInt(2),
+		}
+
+		_, err := MarshalChallengeRequest(want)
+		if err != nil {
+			t.Errorf("MarshalChallengeRequest() error = %v", err)
+			return
+		}
+	})
+}
 func TestUnmarshalChallengeRequest(t *testing.T) {
-	want := ChallengeRequest{
-		G: big.NewInt(1),
-		Q: big.NewInt(2),
-	}
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err := MarshalChallengeRequest(w, want)
-	if err != nil {
-		t.Errorf("MarshalChallengeRequest() error = %v", err)
-		return
-	}
-	w.Flush()
+	t.Run("should un/marshal", func(t *testing.T) {
+		want := ChallengeRequest{
+			G: big.NewInt(1),
+			Q: big.NewInt(2),
+		}
 
-	r := bufio.NewReader(&buf)
+		r, err := MarshalChallengeRequest(want)
+		if err != nil {
+			t.Errorf("MarshalChallengeRequest() error = %v", err)
+			return
+		}
 
-	got, err := UnmarshalChallengeRequest(r)
-	if err != nil {
-		t.Errorf("UnmarshalChallengeRequest() error = %v", err)
-		return
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("ChallengeRequest = %v, want %v", got, want)
-	}
+		got, err := UnmarshalChallengeRequest(r)
+		if err != nil {
+			t.Errorf("UnmarshalChallengeRequest() error = %v", err)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("ChallengeRequest = %v, want %v", got, want)
+		}
+	})
 }
 
+func TestMarshalChallengeResponse(t *testing.T) {
+	t.Run("should marshal", func(t *testing.T) {
+		want := ChallengeResponse{
+			R: big.NewInt(1),
+		}
+		var buf bytes.Buffer
+		w := bufio.NewWriter(&buf)
+		err := MarshalChallengeResponse(w, want)
+		if err != nil {
+			t.Errorf("MarshalChallengeResponse() error = %v", err)
+			return
+		}
+		w.Flush()
+	})
+}
 func TestUnmarshalChallengeResponse(t *testing.T) {
-	want := ChallengeResponse{
-		R: big.NewInt(1),
-	}
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err := MarshalChallengeResponse(w, want)
-	if err != nil {
-		t.Errorf("MarshalChallengeResponse() error = %v", err)
-		return
-	}
-	w.Flush()
+	t.Run("should un/marshal", func(t *testing.T) {
+		want := ChallengeResponse{
+			R: big.NewInt(1),
+		}
+		var buf bytes.Buffer
+		w := bufio.NewWriter(&buf)
+		err := MarshalChallengeResponse(w, want)
+		if err != nil {
+			t.Errorf("MarshalChallengeResponse() error = %v", err)
+			return
+		}
+		w.Flush()
 
-	r := bufio.NewReader(&buf)
+		r := bufio.NewReader(&buf)
 
-	got, err := UnmarshalChallengeResponse(r)
-	if err != nil {
-		t.Errorf("UnmarshalChallengeResponse() error = %v", err)
-		return
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("ChallengeResponse = %v, want %v", got, want)
-	}
+		got, err := UnmarshalChallengeResponse(r)
+		if err != nil {
+			t.Errorf("UnmarshalChallengeResponse() error = %v", err)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("ChallengeResponse = %v, want %v", got, want)
+		}
+	})
 }
 
+func TestMarshalMetadataRequest(t *testing.T) {
+	t.Run("should marshal", func(t *testing.T) {
+		want := MetadataRequest{
+			MAC: []byte("mac"),
+		}
+
+		_, err := MarshalMetadataRequest(want)
+		if err != nil {
+			t.Errorf("MarshalMetadataRequest() error = %v", err)
+			return
+		}
+	})
+}
 func TestUnmarshalMetadataRequest(t *testing.T) {
-	want := MetadataRequest{
-		MAC: []byte("mac"),
-	}
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err := MarshalMetadataRequest(w, want)
-	if err != nil {
-		t.Errorf("MarshalMetadataRequest() error = %v", err)
-		return
-	}
-	w.Flush()
+	t.Run("should un/marshal", func(t *testing.T) {
+		want := MetadataRequest{
+			MAC: []byte("mac"),
+		}
 
-	r := bufio.NewReader(&buf)
+		r, err := MarshalMetadataRequest(want)
+		if err != nil {
+			t.Errorf("MarshalMetadataRequest() error = %v", err)
+			return
+		}
 
-	got, err := UnmarshalMetadataRequest(r)
-	if err != nil {
-		t.Errorf("UnmarshalMetadataRequest() error = %v", err)
-		return
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("MarshalMetadataRequest = %v, want %v", got, want)
-	}
+		got, err := UnmarshalMetadataRequest(r)
+		if err != nil {
+			t.Errorf("UnmarshalMetadataRequest() error = %v", err)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("MarshalMetadataRequest = %v, want %v", got, want)
+		}
+	})
 }
 
+func TestMarshalMetadataResponse(t *testing.T) {
+	t.Run("should marshal", func(t *testing.T) {
+		want := MetadataResponse{
+			Domains: []string{"domain"},
+		}
+		var buf bytes.Buffer
+		w := bufio.NewWriter(&buf)
+		err := MarshalMetadataResponse(w, want)
+		if err != nil {
+			t.Errorf("MarshalMetadataResponse() error = %v", err)
+			return
+		}
+		w.Flush()
+	})
+}
 func TestUnmarshalMetadataResponse(t *testing.T) {
-	t.Run("should un/marshal one domain", func(t *testing.T) {
+	t.Run("should un/marshal", func(t *testing.T) {
 		want := MetadataResponse{
 			Domains: []string{"domain"},
 		}
@@ -223,82 +321,132 @@ func TestUnmarshalMetadataResponse(t *testing.T) {
 	})
 }
 
+func TestMarshalAddRequest(t *testing.T) {
+	t.Run("should marshal", func(t *testing.T) {
+		want := AddRequest{
+			MAC:    []byte("mac"),
+			Domain: "domain",
+		}
+
+		_, err := MarshalAddRequest(want)
+		if err != nil {
+			t.Errorf("MarshalAddRequest() error = %v", err)
+			return
+		}
+	})
+}
+
 func TestUnmarshalAddRequest(t *testing.T) {
-	want := AddRequest{
-		MAC:    []byte("mac"),
-		Domain: "domain",
-	}
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err := MarshalAddRequest(w, want)
-	if err != nil {
-		t.Errorf("MarshalAddRequest() error = %v", err)
-		return
-	}
-	w.Flush()
+	t.Run("should un/marshal", func(t *testing.T) {
+		want := AddRequest{
+			MAC:    []byte("mac"),
+			Domain: "domain",
+		}
 
-	r := bufio.NewReader(&buf)
+		r, err := MarshalAddRequest(want)
+		if err != nil {
+			t.Errorf("MarshalAddRequest() error = %v", err)
+			return
+		}
 
-	got, err := UnmarshalAddRequest(r)
-	if err != nil {
-		t.Errorf("UnmarshalAddRequest() error = %v", err)
-		return
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("AddRequest = %v, want %v", got, want)
-	}
+		got, err := UnmarshalAddRequest(r)
+		if err != nil {
+			t.Errorf("UnmarshalAddRequest() error = %v", err)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("AddRequest = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestMarshalGetRequest(t *testing.T) {
+	t.Run("should marshal", func(t *testing.T) {
+		want := GetRequest{
+			MAC:    []byte("mac"),
+			Domain: "domain",
+			BMK:    big.NewInt(2),
+			Q:      big.NewInt(3),
+		}
+
+		_, err := MarshalGetRequest(want)
+		if err != nil {
+			t.Errorf("MarshalGetRequest() error = %v", err)
+			return
+		}
+
+	})
 }
 
 func TestUnmarshalGetRequest(t *testing.T) {
-	want := GetRequest{
-		MAC:    []byte("mac"),
-		Domain: "domain",
-		BMK:    big.NewInt(2),
-		Q:      big.NewInt(3),
-	}
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err := MarshalGetRequest(w, want)
-	if err != nil {
-		t.Errorf("MarshalGetRequest() error = %v", err)
-		return
-	}
-	w.Flush()
+	t.Run("should un/marshal", func(t *testing.T) {
+		want := GetRequest{
+			MAC:    []byte("mac"),
+			Domain: "domain",
+			BMK:    big.NewInt(2),
+			Q:      big.NewInt(3),
+		}
 
-	r := bufio.NewReader(&buf)
+		r, err := MarshalGetRequest(want)
+		if err != nil {
+			t.Errorf("MarshalGetRequest() error = %v", err)
+			return
+		}
 
-	got, err := UnmarshalGetRequest(r)
-	if err != nil {
-		t.Errorf("UnmarshalGetRequest() error = %v", err)
-		return
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("GetRequest = %v, want %v", got, want)
-	}
+		got, err := UnmarshalGetRequest(r)
+		if err != nil {
+			t.Errorf("UnmarshalGetRequest() error = %v", err)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("GetRequest = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestMarshalGetResponse(t *testing.T) {
+
+	t.Run("should marshal", func(t *testing.T) {
+		want := GetResponse{
+			Bj: big.NewInt(2),
+			Qj: big.NewInt(3),
+		}
+		var buf bytes.Buffer
+		w := bufio.NewWriter(&buf)
+		err := MarshalGetResponse(w, want)
+		if err != nil {
+			t.Errorf("MarshalGetResponse() error = %v", err)
+			return
+		}
+		w.Flush()
+	})
 }
 
 func TestUnmarshalGetResponse(t *testing.T) {
-	want := GetResponse{
-		Bj: big.NewInt(2),
-		Qj: big.NewInt(3),
-	}
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err := MarshalGetResponse(w, want)
-	if err != nil {
-		t.Errorf("MarshalGetResponse() error = %v", err)
-		return
-	}
-	w.Flush()
 
-	r := bufio.NewReader(&buf)
+	t.Run("should un/marshal", func(t *testing.T) {
+		want := GetResponse{
+			Bj: big.NewInt(2),
+			Qj: big.NewInt(3),
+		}
+		var buf bytes.Buffer
+		w := bufio.NewWriter(&buf)
+		err := MarshalGetResponse(w, want)
+		if err != nil {
+			t.Errorf("MarshalGetResponse() error = %v", err)
+			return
+		}
+		w.Flush()
 
-	got, err := UnmarshalGetResponse(r)
-	if err != nil {
-		t.Errorf("UnmarshalGetResponse() error = %v", err)
-		return
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("GetResponse = %v, want %v", got, want)
-	}
+		r := bufio.NewReader(&buf)
+
+		got, err := UnmarshalGetResponse(r)
+		if err != nil {
+			t.Errorf("UnmarshalGetResponse() error = %v", err)
+			return
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("GetResponse = %v, want %v", got, want)
+		}
+	})
 }

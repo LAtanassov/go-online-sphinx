@@ -1,8 +1,6 @@
 package client
 
 import (
-	"bufio"
-	"bytes"
 	"crypto/rand"
 	"io"
 	"math/big"
@@ -18,7 +16,7 @@ import (
 
 var two = big.NewInt(2)
 
-// New creates a new Online SPHINX Client.
+// New creates and returns a new Online SPHINX Client.
 func New(pst Poster, cfg Configuration, repo Repository) *Client {
 	return &Client{
 		poster: pst,
@@ -46,17 +44,16 @@ type Repository interface {
 	Get(username string) (User, error)
 }
 
-// Register will register a new user.
+// Register a new user by calling an Online SPHINX service.
+// It might fail in case
+// * an user with the same ID already exists and
+// * Online SPHINX service is offline.
 func (clt *Client) Register(user User) error {
 
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err := contract.MarshalRegisterRequest(w, contract.RegisterRequest{CID: user.cID})
+	rd, err := contract.MarshalRegisterRequest(contract.RegisterRequest{CID: user.cID})
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal RegisterRequest")
 	}
-	w.Flush()
-	rd := bufio.NewReader(&buf)
 
 	u, err := url.Parse(clt.config.baseURL)
 	if err != nil {
@@ -81,12 +78,15 @@ func (clt *Client) Register(user User) error {
 	return nil
 }
 
-// Login runs the Online SPHINX login protocol
+// Login an existing user by calling Online SPHINX service.
+// It might fail in case
+// * local user configuration does not exist,
+// * Online SPHINX service is offline.
 func (clt *Client) Login(username, pwd string) error {
 
 	user, err := clt.repo.Get(username)
 	if err != nil {
-		return errors.Wrap(err, "failed to get user from repo")
+		return errors.Wrap(err, "failed to get user from local repo")
 	}
 
 	g := crypto.HashInGroup(pwd, clt.config.hash, user.q)
@@ -96,6 +96,7 @@ func (clt *Client) Login(username, pwd string) error {
 		return errors.Wrap(err, "failed to generate random cNonce")
 	}
 
+	// blind factor
 	k, err := rand.Int(rand.Reader, user.q)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate random k")
@@ -110,14 +111,10 @@ func (clt *Client) Login(username, pwd string) error {
 
 	b := crypto.ExpInGroup(g, k, user.q)
 
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err = contract.MarshalExpKRequest(w, contract.ExpKRequest{CID: user.cID, CNonce: cNonce, B: b, Q: user.q})
+	rd, err := contract.MarshalExpKRequest(contract.ExpKRequest{CID: user.cID, CNonce: cNonce, B: b, Q: user.q})
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal ExpKRequest")
 	}
-	w.Flush()
-	rd := bufio.NewReader(&buf)
 
 	u, err := url.Parse(clt.config.baseURL)
 	if err != nil {
@@ -163,15 +160,11 @@ func (clt *Client) Challenge() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to generate random g")
 	}
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err = contract.MarshalChallengeRequest(w, contract.ChallengeRequest{G: g, Q: clt.session.user.q})
+
+	rd, err := contract.MarshalChallengeRequest(contract.ChallengeRequest{G: g, Q: clt.session.user.q})
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal ChallengeRequest")
 	}
-	w.Flush()
-
-	rd := bufio.NewReader(&buf)
 
 	u, err := url.Parse(clt.config.baseURL)
 	if err != nil {
@@ -211,14 +204,10 @@ func (clt *Client) GetMetadata() ([]string, error) {
 
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), []byte("metadata"))
 
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err := contract.MarshalMetadataRequest(w, contract.MetadataRequest{MAC: mac})
+	rd, err := contract.MarshalMetadataRequest(contract.MetadataRequest{MAC: mac})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal MetadataRequest")
 	}
-	w.Flush()
-	rd := bufio.NewReader(&buf)
 
 	u, err := url.Parse(clt.config.baseURL)
 	u.Path = path.Join(u.Path, clt.config.metadataPath)
@@ -250,18 +239,13 @@ func (clt *Client) Add(domain string) error {
 
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), []byte(domain))
 
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err := contract.MarshalAddRequest(w, contract.AddRequest{
+	rd, err := contract.MarshalAddRequest(contract.AddRequest{
 		Domain: domain,
 		MAC:    mac,
 	})
-	w.Flush()
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal AddRequest")
 	}
-
-	rd := bufio.NewReader(&buf)
 
 	u, err := url.Parse(clt.config.baseURL)
 	u.Path = path.Join(u.Path, clt.config.addPath)
@@ -304,20 +288,15 @@ func (clt *Client) Get(domain string) (string, error) {
 
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), bmk.Bytes())
 
-	var buf bytes.Buffer
-	w := bufio.NewWriter(&buf)
-	err = contract.MarshalGetRequest(w, contract.GetRequest{
+	rd, err := contract.MarshalGetRequest(contract.GetRequest{
 		Domain: domain,
 		MAC:    mac,
 		BMK:    bmk,
 		Q:      clt.session.user.q,
 	})
-	w.Flush()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal GetRequest")
 	}
-
-	rd := bufio.NewReader(&buf)
 
 	u, err := url.Parse(clt.config.baseURL)
 	u.Path = path.Join(u.Path, clt.config.getPath)
