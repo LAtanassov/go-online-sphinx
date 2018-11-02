@@ -194,3 +194,77 @@ func TestClient_GetMetadata(t *testing.T) {
 		}
 	})
 }
+
+func TestClient_Add(t *testing.T) {
+	// before
+	user, err := NewUser("username", 8)
+	if err != nil {
+		t.Errorf("before test started - error = %v", err)
+	}
+	repo := NewInMemoryUserRepository()
+	repo.Add(user)
+
+	cfg := NewConfiguration()
+	sID := big.NewInt(10)
+	ski := big.NewInt(10)
+	mk := big.NewInt(10)
+
+	t.Run("should return domains", func(t *testing.T) {
+		// given
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusCreated)
+		}))
+		defer ts.Close()
+		// when
+		cfg.baseURL = ts.URL
+		clt := New(http.DefaultClient, cfg, repo)
+		clt.session = NewSession(user, sID, ski, mk)
+
+		err := clt.Add("google.com")
+		if err != nil {
+			t.Errorf("Add() error = %v", err)
+		}
+	})
+}
+
+func TestClient_Get(t *testing.T) {
+	// before
+	user, err := NewUser("username", 8)
+	if err != nil {
+		t.Errorf("before test started - error = %v", err)
+	}
+	repo := NewInMemoryUserRepository()
+	repo.Add(user)
+
+	cfg := NewConfiguration()
+	sID := big.NewInt(10)
+	ski := big.NewInt(10)
+	mk := big.NewInt(10)
+
+	t.Run("should return domains", func(t *testing.T) {
+		// given
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var buf bytes.Buffer
+			wr := bufio.NewWriter(&buf)
+			err = contract.MarshalGetResponse(wr, contract.GetResponse{Bj: big.NewInt(1), Qj: big.NewInt(1)})
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			wr.Flush()
+
+			w.WriteHeader(http.StatusOK)
+			w.Write(buf.Bytes())
+		}))
+		defer ts.Close()
+		// when
+		cfg.baseURL = ts.URL
+		clt := New(http.DefaultClient, cfg, repo)
+		clt.session = NewSession(user, sID, ski, mk)
+
+		_, err := clt.Get("google.com")
+		if err != nil {
+			t.Errorf("Get() error = %v", err)
+		}
+	})
+}
