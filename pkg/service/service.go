@@ -5,13 +5,21 @@ import (
 	"crypto/rand"
 	"math/big"
 
-	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
+	"github.com/pkg/errors"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 )
 
-var one = big.NewInt(1)
-var two = big.NewInt(2)
+var (
+	// ErrMacMismatch is returned when the MAC of the request and the MAC within the request does not match
+	ErrMacMismatch = errors.New("MAC mismatch")
+	// ErrDomainNotFound is returned an existing user does not
+	ErrDomainNotFound = errors.New("domain not found")
+)
+var (
+	one = big.NewInt(1)
+	two = big.NewInt(2)
+)
 
 // Service represents the interface provided to other layers.
 type Service interface {
@@ -65,19 +73,24 @@ func (o *OnlineSphinx) Register(cID *big.Int) error {
 
 	kv, err := rand.Int(rand.Reader, max)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Register: failed to generate random int kv")
 	}
 
 	_, err = o.users.Get(cID)
-	if err != ErrUserNotFound {
-		return contract.ErrRegistrationFailed
+	switch err {
+	case ErrUserNotFound:
+		// continue
+	default:
+		return errors.Wrapf(err, "Register: failed to get user with ID %v", cID)
 	}
 
-	return o.users.Set(User{
+	err = o.users.Set(User{
 		cID:    cID,
 		kv:     kv,
 		vaults: make(map[string]Vault),
 	})
+
+	return errors.Wrapf(err, "Register: failed to set user with ID %v", cID)
 }
 
 // ExpK returns r**k mod |2q + 1|
@@ -92,11 +105,13 @@ func (o *OnlineSphinx) ExpK(cID, cNonce, b, q *big.Int) (ski, sID, sNonce, bd, q
 
 	sNonce, err = rand.Int(rand.Reader, max)
 	if err != nil {
+		err = errors.Wrap(err, "ExpK: failed to generate random int sNonce")
 		return
 	}
 
 	u, err := o.users.Get(cID)
 	if err != nil {
+		err = errors.Wrapf(err, "ExpK: failed to get user with ID %v", cID)
 		return
 	}
 	kv = u.kv
@@ -116,7 +131,7 @@ func (o *OnlineSphinx) Challenge(ski, g, q *big.Int) (r *big.Int, err error) {
 func (o *OnlineSphinx) GetMetadata(cID *big.Int) (domains []string, err error) {
 	u, err := o.users.Get(cID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "GetMetadata: failed to get user with ID %v", cID)
 	}
 	domains = make([]string, len(u.vaults))
 	var i int
@@ -135,37 +150,37 @@ func (o *OnlineSphinx) VerifyMAC(mac []byte, ski *big.Int, data ...[]byte) error
 	vmac := crypto.HmacData(o.config.hash, ski.Bytes(), data...)
 
 	if bytes.Compare(mac, vmac) != 0 {
-		return contract.ErrAuthenticationFailed
+		return errors.Wrap(ErrMacMismatch, "VerifyMAC")
 	}
 	return nil
 }
 
 // Add by generating random keys k, qj for specific 'domain'
-func (o *OnlineSphinx) Add(cID *big.Int, domain string) (err error) {
+func (o *OnlineSphinx) Add(cID *big.Int, domain string) error {
 
 	max := new(big.Int)
 	max.Exp(two, o.config.bits, nil)
 
 	k, err := rand.Int(rand.Reader, max)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Add: failed to generate random int k")
 	}
 
 	qj, err := rand.Int(rand.Reader, max)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Add: failed to generate random int qj")
 	}
 
 	u, err := o.users.Get(cID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Add: failed to get user with ID %v", cID)
 	}
 	u.vaults[domain] = Vault{
 		k:  k,
 		qj: qj,
 	}
 
-	return o.users.Set(u)
+	return errors.Wrapf(o.users.Set(u), "Add: failed to add user with ID %v and domain %v", cID, domain)
 }
 
 // Get return bmk**bj and qj associated with domain
@@ -178,7 +193,7 @@ func (o *OnlineSphinx) Get(cID *big.Int, domain string, bmk, q *big.Int) (bj, qj
 
 	v, ok := u.vaults[domain]
 	if !ok {
-		return nil, nil, contract.ErrDomainNotFound
+		return nil, nil, errors.Wrapf(ErrDomainNotFound, "Get: failed to get user with ID %v and domain %v", cID, domain)
 	}
 
 	return crypto.ExpInGroup(bmk, v.k, q), v.qj, nil

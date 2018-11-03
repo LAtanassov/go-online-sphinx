@@ -47,14 +47,30 @@ func newCommand() *cobra.Command {
 
 	var loginCmd = &cobra.Command{
 		Use:   "login",
-		Short: "Login to Online SPHINX",
+		Short: "Login",
 		Long:  `Login to Online SPHINX`,
 		Run:   loginRun,
+	}
+
+	var addCmd = &cobra.Command{
+		Use:   "add",
+		Short: "Add New Domain",
+		Long:  `Add New Domain`,
+		Run:   addRun,
+	}
+
+	var getCmd = &cobra.Command{
+		Use:   "get",
+		Short: "Get Password of Domain",
+		Long:  `Get Password of Domain`,
+		Run:   getRun,
 	}
 
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(registerCmd)
 	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(getCmd)
 
 	return &rootCmd
 
@@ -107,7 +123,6 @@ func initRun(cmd *cobra.Command, args []string) {
 }
 
 func registerRun(cmd *cobra.Command, args []string) {
-	// TODO: load from env. or file
 	cfg := client.Configuration{}
 	repo := client.NewInMemoryUserRepository()
 	user, err := client.NewUser("username", 8)
@@ -118,8 +133,19 @@ func registerRun(cmd *cobra.Command, args []string) {
 }
 
 func loginRun(cmd *cobra.Command, args []string) {
-	// TODO: load from env. or file
 	cfg := client.Configuration{}
 	repo := client.NewInMemoryUserRepository()
 	client.New(http.DefaultClient, cfg, repo).Login("username", "password")
+}
+
+func addRun(cmd *cobra.Command, args []string) {
+	cfg := client.Configuration{}
+	repo := client.NewInMemoryUserRepository()
+	client.New(http.DefaultClient, cfg, repo).Add("google.com")
+}
+
+func getRun(cmd *cobra.Command, args []string) {
+	cfg := client.Configuration{}
+	repo := client.NewInMemoryUserRepository()
+	client.New(http.DefaultClient, cfg, repo).Get("google.com")
 }

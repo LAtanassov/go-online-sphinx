@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
+	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -17,6 +18,9 @@ var (
 	store = sessions.NewCookieStore(key)
 )
 
+// ErrLoginRequired is return probably because of missing session
+var ErrLoginRequired = errors.New("login required")
+
 // MakeRegisterHandler returns a handler
 func MakeRegisterHandler(s Service) http.Handler {
 	r := mux.NewRouter()
@@ -24,7 +28,7 @@ func MakeRegisterHandler(s Service) http.Handler {
 	r.HandleFunc("/v1/register", func(resp http.ResponseWriter, req *http.Request) {
 		regReq, err := contract.UnmarshalRegisterRequest(req.Body)
 		if err != nil {
-			contract.MarshalError(resp, contract.ErrInvalidArgument)
+			contract.MarshalError(resp, err)
 			return
 		}
 		defer req.Body.Close()
@@ -47,13 +51,13 @@ func MakeExpKHandler(s Service) http.Handler {
 
 		session, err := store.Get(req, "online-sphinx")
 		if err != nil {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, err)
 			return
 		}
 
 		expkReq, err := contract.UnmarshalExpKRequest(req.Body)
 		if err != nil {
-			contract.MarshalError(resp, contract.ErrInvalidArgument)
+			contract.MarshalError(resp, err)
 			return
 		}
 		defer req.Body.Close()
@@ -88,13 +92,13 @@ func MakeChallengeHandler(s Service) http.Handler {
 
 		session, err := store.Get(req, "online-sphinx")
 		if err != nil {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, ErrLoginRequired)
 			return
 		}
 
 		skiHex, ok := session.Values["SKi"].(string)
 		if !ok {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, ErrLoginRequired)
 			return
 		}
 		ski := new(big.Int)
@@ -132,13 +136,13 @@ func MakeMetadataHandler(s Service) http.Handler {
 
 		session, err := store.Get(req, "online-sphinx")
 		if err != nil {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, err)
 			return
 		}
 
 		cIDHex, ok := session.Values["cID"].(string)
 		if !ok {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, ErrLoginRequired)
 			return
 		}
 		cID := new(big.Int)
@@ -146,7 +150,7 @@ func MakeMetadataHandler(s Service) http.Handler {
 
 		skiHex, ok := session.Values["SKi"].(string)
 		if !ok {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, ErrLoginRequired)
 			return
 		}
 		ski := new(big.Int)
@@ -190,13 +194,13 @@ func MakeAddHandler(s Service) http.Handler {
 
 		session, err := store.Get(req, "online-sphinx")
 		if err != nil {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, err)
 			return
 		}
 
 		cIDHex, ok := session.Values["cID"].(string)
 		if !ok {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, ErrLoginRequired)
 			return
 		}
 		cID := new(big.Int)
@@ -204,7 +208,7 @@ func MakeAddHandler(s Service) http.Handler {
 
 		skiHex, ok := session.Values["SKi"].(string)
 		if !ok {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, ErrLoginRequired)
 			return
 		}
 		ski := new(big.Int)
@@ -212,7 +216,7 @@ func MakeAddHandler(s Service) http.Handler {
 
 		addReq, err := contract.UnmarshalAddRequest(req.Body)
 		if err != nil {
-			contract.MarshalError(resp, contract.ErrInvalidArgument)
+			contract.MarshalError(resp, err)
 			return
 		}
 		defer req.Body.Close()
@@ -242,13 +246,13 @@ func MakeGetHandler(s Service) http.Handler {
 	r.HandleFunc("/v1/get", func(resp http.ResponseWriter, req *http.Request) {
 		session, err := store.Get(req, "online-sphinx")
 		if err != nil {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, err)
 			return
 		}
 
 		cIDHex, ok := session.Values["cID"].(string)
 		if !ok {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, ErrLoginRequired)
 			return
 		}
 		cID := new(big.Int)
@@ -256,7 +260,7 @@ func MakeGetHandler(s Service) http.Handler {
 
 		skiHex, ok := session.Values["SKi"].(string)
 		if !ok {
-			contract.MarshalError(resp, contract.ErrAuthenticationFailed)
+			contract.MarshalError(resp, ErrLoginRequired)
 			return
 		}
 		ski := new(big.Int)
@@ -264,7 +268,7 @@ func MakeGetHandler(s Service) http.Handler {
 
 		getReq, err := contract.UnmarshalGetRequest(req.Body)
 		if err != nil {
-			contract.MarshalError(resp, contract.ErrInvalidArgument)
+			contract.MarshalError(resp, err)
 			return
 		}
 		defer req.Body.Close()

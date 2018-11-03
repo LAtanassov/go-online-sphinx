@@ -39,17 +39,17 @@ type User struct {
 func NewUser(username string, bits int) (User, error) {
 	q, err := rand.Prime(rand.Reader, bits)
 	if err != nil {
-		return User{}, errors.Wrap(err, "failed to generate prime")
+		return User{}, errors.Wrap(err, "NewUser: failed to generate radnom prime")
 	}
 
 	cID, err := rand.Int(rand.Reader, q)
 	if err != nil {
-		return User{}, errors.Wrap(err, "failed to generate int")
+		return User{}, errors.Wrap(err, "NewUser: failed to generate random int")
 	}
 
 	k, err := rand.Int(rand.Reader, q)
 	if err != nil {
-		return User{}, errors.Wrap(err, "failed to generate int")
+		return User{}, errors.Wrap(err, "NewUser: failed to generate random int")
 	}
 	return User{
 		username: username,
@@ -75,7 +75,7 @@ func (r *UserRepository) Add(u User) error {
 
 	_, ok := r.users[u.username]
 	if ok {
-		return errors.Wrap(ErrUserAlreadyExists, "failed to add user to map")
+		return errors.Wrap(ErrUserAlreadyExists, "Add")
 	}
 
 	r.users[u.username] = u
@@ -89,7 +89,7 @@ func (r *UserRepository) Get(username string) (User, error) {
 
 	u, ok := r.users[username]
 	if !ok {
-		return User{}, errors.Wrap(ErrUserNotFound, "failed to get user from map")
+		return User{}, errors.Wrap(ErrUserNotFound, "Get")
 	}
 	return u, nil
 }

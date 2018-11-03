@@ -14,6 +14,13 @@ import (
 	"github.com/LAtanassov/go-online-sphinx/pkg/crypto"
 )
 
+// user facing errors
+var (
+	// ErrLoginRequired is returned mostly because of a missing session
+	ErrLoginRequired = errors.New("login required")
+	// ErrOperationFailed is returned when an operation failed and should needs to try again later
+	ErrOperationFailed = errors.New("operation failed")
+)
 var two = big.NewInt(2)
 
 // New creates and returns a new Online SPHINX Client.
@@ -52,27 +59,27 @@ func (clt *Client) Register(user User) error {
 
 	rd, err := contract.MarshalRegisterRequest(contract.RegisterRequest{CID: user.cID})
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal RegisterRequest")
+		return errors.Wrap(err, "Register: failed to marshal RegisterRequest")
 	}
 
 	u, err := url.Parse(clt.config.baseURL)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse baseURL")
+		return errors.Wrap(err, "Register: failed to parse baseURL")
 	}
 	u.Path = path.Join(u.Path, clt.config.registerPath)
 	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
 	if err != nil {
-		return errors.Wrap(err, "failed to post RegisterRequest")
+		return errors.Wrap(err, "Register: failed to post RegisterRequest")
 	}
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
-		return errors.Wrap(err, "failed to unmarshal error from response")
+		return errors.Wrap(err, "Register: failed to unmarshal error from response")
 	}
 
 	err = clt.repo.Add(user)
 	if err != nil {
-		return errors.Wrap(err, "failed to add new user to repo")
+		return errors.Wrap(err, "Register: failed to add new user to repo")
 	}
 
 	return nil
@@ -153,7 +160,7 @@ func (clt *Client) Login(username, pwd string) error {
 func (clt *Client) Challenge() error {
 
 	if clt.session == nil {
-		return errors.Wrap(contract.ErrAuthenticationFailed, "client session missing")
+		return ErrLoginRequired
 	}
 
 	g, err := rand.Int(rand.Reader, clt.session.user.q)
@@ -189,7 +196,7 @@ func (clt *Client) Challenge() error {
 
 	verifier := crypto.ExpInGroup(g, clt.session.ski, clt.session.user.q)
 	if response.R.Cmp(verifier) != 0 {
-		return errors.Wrap(contract.ErrAuthenticationFailed, "challenge-response with session key ski failed")
+		return ErrOperationFailed
 	}
 
 	return nil
@@ -199,7 +206,7 @@ func (clt *Client) Challenge() error {
 func (clt *Client) GetMetadata() ([]string, error) {
 
 	if clt.session == nil {
-		return nil, errors.Wrap(contract.ErrAuthenticationFailed, "client session missing")
+		return nil, ErrLoginRequired
 	}
 
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), []byte("metadata"))
@@ -234,7 +241,7 @@ func (clt *Client) GetMetadata() ([]string, error) {
 func (clt *Client) Add(domain string) error {
 
 	if clt.session == nil {
-		return errors.Wrap(contract.ErrAuthenticationFailed, "client session missing")
+		return ErrLoginRequired
 	}
 
 	mac := crypto.HmacData(clt.config.hash, clt.session.ski.Bytes(), []byte(domain))
@@ -260,7 +267,7 @@ func (clt *Client) Add(domain string) error {
 	}
 
 	if r.StatusCode != http.StatusCreated {
-		return errors.Wrap(contract.ErrAddVaultFailed, "failed to add vault")
+		return ErrOperationFailed
 	}
 
 	return nil
@@ -270,7 +277,7 @@ func (clt *Client) Add(domain string) error {
 func (clt *Client) Get(domain string) (string, error) {
 
 	if clt.session == nil {
-		return "", errors.Wrap(contract.ErrAuthenticationFailed, "client session missing")
+		return "", ErrLoginRequired
 	}
 
 	k, err := rand.Int(rand.Reader, clt.session.user.q)

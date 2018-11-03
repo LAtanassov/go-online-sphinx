@@ -12,16 +12,6 @@ import (
 )
 
 var (
-	// ErrInvalidArgument is returned when an invalid argument was passed.
-	ErrInvalidArgument = errors.New("invalid arguments")
-	// ErrAuthenticationFailed ...
-	ErrAuthenticationFailed = errors.New("authentication failed")
-	// ErrDomainNotFound is returned when an user ask for a domain that does not exists
-	ErrDomainNotFound = errors.New("domain not found")
-	// ErrRegistrationFailed ...
-	ErrRegistrationFailed = errors.New("registration failed")
-	// ErrAddVaultFailed ...
-	ErrAddVaultFailed = errors.New("add vault failed")
 	// ErrUnexpectedType is returned after a type cast failed.
 	ErrUnexpectedType = errors.New("unexpected type")
 )
@@ -509,10 +499,6 @@ type GetResponse struct {
 func MarshalError(w http.ResponseWriter, err error) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	switch err {
-	case ErrInvalidArgument:
-		w.WriteHeader(http.StatusBadRequest)
-	case ErrAuthenticationFailed:
-		w.WriteHeader(http.StatusForbidden)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
 	}

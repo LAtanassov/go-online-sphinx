@@ -147,8 +147,8 @@ func TestClient_Challenge(t *testing.T) {
 		clt.session = NewSession(user, sID, ski, mk)
 
 		err = clt.Challenge()
-		if errors.Cause(err) != contract.ErrAuthenticationFailed {
-			t.Errorf("Challenge() error = %v wantErr = %v", err, contract.ErrAuthenticationFailed)
+		if errors.Cause(err) != ErrOperationFailed {
+			t.Errorf("Challenge() error = %v wantErr = %v", err, ErrOperationFailed)
 		}
 	})
 }

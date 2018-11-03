@@ -6,14 +6,8 @@ import (
 	"sync"
 )
 
-var (
-	// ErrUserAlreadyExists in repostory already
-	ErrUserAlreadyExists = errors.New("user already exists")
-	// ErrVaultAlreadyExists in repostory already
-	ErrVaultAlreadyExists = errors.New("vault already exists")
-	// ErrUserNotFound in repostory
-	ErrUserNotFound = errors.New("user not found")
-)
+// ErrUserNotFound is returned when an user with a given cID does not exists
+var ErrUserNotFound = errors.New("user repo: user not found")
 
 // NewUserRepository creates and returns an inmemory user repository.
 func NewUserRepository() *InMemoryUserRepository {
@@ -25,7 +19,7 @@ func NewUserRepository() *InMemoryUserRepository {
 
 // InMemoryUserRepository provides an user repository.
 // This repository can also be implemented using an SQL database.UserRepository.
-// It should be store for long term (replicated, shared).
+// It should be stored for long term (replicated, shared).
 // client.UserRepository is atm identical with server.UserRepository, but this might change in future
 type InMemoryUserRepository struct {
 	mutex sync.Mutex
@@ -39,13 +33,13 @@ type User struct {
 	vaults map[string]Vault
 }
 
-// Vault ...
+// Vault is an entity and contains cryptographic material necessary to retrieve the vault password
 type Vault struct {
 	k  *big.Int
 	qj *big.Int
 }
 
-// Set new or existing user to user repository
+// Set new or overrides existing user to user repository
 func (r *InMemoryUserRepository) Set(u User) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()

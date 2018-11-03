@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"math/big"
 	"time"
 
@@ -26,7 +27,7 @@ func (s *loggingService) Register(cID *big.Int) (err error) {
 			"method", "Register",
 			"cID", cID.Text(16),
 
-			"err", err,
+			"err", fmt.Sprintf("%+v", err),
 
 			"took", time.Since(begin),
 		)
@@ -50,7 +51,7 @@ func (s *loggingService) ExpK(cID, cNonce, b, q *big.Int) (ski, sID, sNonce, bd,
 			"bd", bd.Text(16),
 			"q0", q0.Text(16),
 			"kv", kv.Text(16),
-			"err", err,
+			"err", fmt.Sprintf("%+v", err),
 
 			"took", time.Since(begin),
 		)
@@ -67,7 +68,7 @@ func (s *loggingService) Challenge(ski, g, q *big.Int) (r *big.Int, err error) {
 			"q", q.Text(16),
 
 			"r", r.Text(16),
-			"err", err,
+			"err", fmt.Sprintf("%+v", err),
 
 			"took", time.Since(begin),
 		)
@@ -83,7 +84,7 @@ func (s *loggingService) VerifyMAC(mac []byte, ski *big.Int, data ...[]byte) (er
 			"mac", mac,
 			"ski", ski.Text(16),
 
-			"err", err,
+			"err", fmt.Sprintf("%+v", err),
 
 			"took", time.Since(begin),
 		)
@@ -98,7 +99,7 @@ func (s *loggingService) GetMetadata(cID *big.Int) (domains []string, err error)
 			"method", "GetMetadata",
 			"cID", cID.Text(16),
 
-			"err", err,
+			"err", fmt.Sprintf("%+v", err),
 
 			"took", time.Since(begin),
 		)
@@ -113,7 +114,7 @@ func (s *loggingService) Add(cID *big.Int, domain string) (err error) {
 			"cID", cID.Text(16),
 			"domain", domain,
 
-			"err", err,
+			"err", fmt.Sprintf("%+v", err),
 
 			"took", time.Since(begin),
 		)
@@ -132,7 +133,7 @@ func (s *loggingService) Get(cID *big.Int, domain string, bmk *big.Int, q *big.I
 
 			"bj", bj.Text(16),
 			"qj", qj.Text(16),
-			"err", err,
+			"err", fmt.Sprintf("%+v", err),
 
 			"took", time.Since(begin),
 		)
