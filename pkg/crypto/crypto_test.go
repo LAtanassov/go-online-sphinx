@@ -67,3 +67,28 @@ func TestCrypto_HashInGroup(t *testing.T) {
 		})
 	}
 }
+
+func TestHmacData(t *testing.T) {
+	type args struct {
+		h    func() hash.Hash
+		key  []byte
+		data [][]byte
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+		want    []byte
+	}{
+		{"should compare HMAC's", args{sha256.New, []byte("key"), [][]byte{}}, true, []byte("another-hash")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := HmacData(tt.args.h, tt.args.key, tt.args.data...)
+
+			if !reflect.DeepEqual(got, tt.want) && !tt.wantErr {
+				t.Errorf("HmacData() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
