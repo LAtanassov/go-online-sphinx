@@ -1,7 +1,6 @@
 package client
 
 import (
-	"crypto/sha256"
 	"hash"
 )
 
@@ -20,9 +19,17 @@ type Configuration struct {
 }
 
 // NewConfiguration return default configuration.
-func NewConfiguration() Configuration {
+func NewConfiguration(baseURL string, bits int, hashFn func() hash.Hash) Configuration {
 	return Configuration{
-		hash: sha256.New,
-		bits: 8,
+		hash:          hashFn,
+		bits:          8,
+		contentType:   "application/json",
+		baseURL:       baseURL,
+		registerPath:  "/v1/register",
+		expkPath:      "/v1/login/expk",
+		challengePath: "/v1/login/challenge",
+		metadataPath:  "/v1/metadata",
+		addPath:       "/v1/add",
+		getPath:       "/v1/get",
 	}
 }

@@ -5,6 +5,7 @@ package client_test
 import (
 	"context"
 	"crypto/sha256"
+	"hash"
 	"math/big"
 	"net/http"
 	"net/http/cookiejar"
@@ -12,7 +13,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
+	"github.com/LAtanassov/go-online-sphinx/pkg/client"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	docker "github.com/docker/docker/client"
@@ -21,11 +22,18 @@ import (
 
 func TestITClient_Register(t *testing.T) {
 
-	baseURL := "http://localhost:8080"
-
+	bits := 8
+	hashFn := sha256.New
+	baseURL, err := startIT(t, bits, hashFn)
+	if err != nil {
+		_ = stopIT(t)
+	}
 	t.Run("should register a new user ID", func(t *testing.T) {
-		clt := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}, NewInMemoryUserRepository())
-		user, err := NewUser("new-user", 8)
+		clt := client.New(
+			&http.Client{},
+			client.NewConfiguration(baseURL, bits, hashFn),
+			client.NewInMemoryUserRepository())
+		user, err := client.NewUser("new-user", 8)
 		if err != nil {
 			t.Errorf("NewUser() error = %v", err)
 		}
@@ -36,9 +44,12 @@ func TestITClient_Register(t *testing.T) {
 	})
 
 	t.Run("should not be able to register with an existing user ID", func(t *testing.T) {
-		clt := New(&http.Client{}, Configuration{baseURL: baseURL, registerPath: "/v1/register"}, NewInMemoryUserRepository())
+		clt := client.New(
+			&http.Client{},
+			client.NewConfiguration(baseURL, bits, hashFn),
+			client.NewInMemoryUserRepository())
 		// given
-		user, _ := NewUser("another-new-user", 8)
+		user, _ := client.NewUser("another-new-user", 8)
 		err := clt.Register(user)
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
@@ -46,7 +57,7 @@ func TestITClient_Register(t *testing.T) {
 		// when
 		err = clt.Register(user)
 		if err == nil {
-			t.Errorf("Register() error = %v wantErr = %v", err, contract.ErrRegistrationFailed)
+			t.Errorf("Register() no error but got err = %v", err)
 		}
 	})
 
@@ -54,39 +65,39 @@ func TestITClient_Register(t *testing.T) {
 
 func TestITClient_Login(t *testing.T) {
 
+	bits := 8
+	hashFn := sha256.New
+	baseURL, err := startIT(t, bits, hashFn)
+	if err != nil {
+		_ = stopIT(t)
+	}
 	var two = big.NewInt(2)
 
 	cookieJar, _ := cookiejar.New(nil)
-	client := &http.Client{
+	httpClient := &http.Client{
 		Jar: cookieJar,
 	}
-
-	baseURL := "http://localhost:8080"
-	bits := 8
 
 	max := new(big.Int)
 	max.Exp(two, big.NewInt(int64(bits)), nil)
 
-	clt := New(client, Configuration{
-		hash:          sha256.New,
-		bits:          bits,
-		baseURL:       baseURL,
-		registerPath:  "/v1/register",
-		expkPath:      "/v1/login/expk",
-		challengePath: "/v1/login/challenge",
-		metadataPath:  "/v1/metadata",
-		addPath:       "/v1/add",
-		getPath:       "/v1/get",
-	}, NewInMemoryUserRepository())
+	clt := client.New(
+		httpClient,
+		client.NewConfiguration(baseURL, bits, hashFn),
+		client.NewInMemoryUserRepository())
 
-	user, _ := NewUser("username", bits)
-	err := clt.Register(user)
+	user, err := client.NewUser("username", bits)
+	if err != nil {
+		t.Errorf("client.NewUser() error = %v", err)
+	}
+
+	err = clt.Register(user)
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
 
 	t.Run("should login with a valid password", func(t *testing.T) {
-		err := clt.Login(user.username, "password")
+		err := clt.Login("username", "password")
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
@@ -98,9 +109,9 @@ func TestITClient_Login(t *testing.T) {
 	})
 
 	t.Run("should recv. common error if wrong password", func(t *testing.T) {
-		err := clt.Login(user.username, "wrong-password")
+		err := clt.Login("username", "wrong-password")
 		if err == nil {
-			t.Errorf("Login() error = %v wantErr = %v", err, contract.ErrAuthenticationFailed)
+			t.Errorf("Login() want no error but got wantErr = %v", err)
 		}
 		err = clt.Challenge()
 		if err != nil {
@@ -108,38 +119,35 @@ func TestITClient_Login(t *testing.T) {
 		}
 		clt.Logout()
 	})
+	stopIT(t)
 }
 
 func TestITClient_GetMetadata(t *testing.T) {
 
-	baseURL := "http://localhost:8080"
 	bits := 8
-
+	hashFn := sha256.New
+	baseURL, err := startIT(t, bits, hashFn)
+	if err != nil {
+		_ = stopIT(t)
+	}
 	cookieJar, _ := cookiejar.New(nil)
-	client := &http.Client{
+	httpClient := &http.Client{
 		Jar: cookieJar,
 	}
 
-	clt := New(client, Configuration{
-		hash:          sha256.New,
-		bits:          bits,
-		baseURL:       baseURL,
-		registerPath:  "/v1/register",
-		expkPath:      "/v1/login/expk",
-		challengePath: "/v1/login/challenge",
-		metadataPath:  "/v1/metadata",
-		addPath:       "/v1/add",
-		getPath:       "/v1/get",
-	}, NewInMemoryUserRepository())
+	clt := client.New(
+		httpClient,
+		client.NewConfiguration(baseURL, bits, hashFn),
+		client.NewInMemoryUserRepository())
 
-	user, _ := NewUser("metadata-user", bits)
-	err := clt.Register(user)
+	user, _ := client.NewUser("username", bits)
+	err = clt.Register(user)
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
 
 	t.Run("should have no domains", func(t *testing.T) {
-		err := clt.Login(user.username, "password")
+		err := clt.Login("username", "password")
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
@@ -157,7 +165,7 @@ func TestITClient_GetMetadata(t *testing.T) {
 	t.Run("should have google.com domain", func(t *testing.T) {
 		// given
 		wantDomains := []string{"google.com"}
-		err := clt.Login(user.username, "password")
+		err := clt.Login("username", "password")
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
@@ -176,33 +184,29 @@ func TestITClient_GetMetadata(t *testing.T) {
 			t.Errorf("domains = %v wantDomains = %v", domains, wantDomains)
 		}
 	})
-
+	stopIT(t)
 }
 
 func TestITClient_Add(t *testing.T) {
 
-	baseURL := "http://localhost:8080"
 	bits := 8
-
+	hashFn := sha256.New
+	baseURL, err := startIT(t, bits, hashFn)
+	if err != nil {
+		_ = stopIT(t)
+	}
 	cookieJar, _ := cookiejar.New(nil)
-	client := &http.Client{
+	httpClient := &http.Client{
 		Jar: cookieJar,
 	}
 
-	clt := New(client, Configuration{
-		hash:          sha256.New,
-		bits:          bits,
-		baseURL:       baseURL,
-		registerPath:  "/v1/register",
-		expkPath:      "/v1/login/expk",
-		challengePath: "/v1/login/challenge",
-		metadataPath:  "/v1/metadata",
-		addPath:       "/v1/add",
-		getPath:       "/v1/get",
-	}, NewInMemoryUserRepository())
+	clt := client.New(
+		httpClient,
+		client.NewConfiguration(baseURL, bits, hashFn),
+		client.NewInMemoryUserRepository())
 
-	user, _ := NewUser("metadata-user", bits)
-	err := clt.Register(user)
+	user, _ := client.NewUser("username", bits)
+	err = clt.Register(user)
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
@@ -210,7 +214,7 @@ func TestITClient_Add(t *testing.T) {
 	t.Run("should add a new domain with name google.com", func(t *testing.T) {
 		// given
 		wantDomains := []string{"google.com"}
-		err := clt.Login(user.username, "password")
+		err := clt.Login("username", "password")
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
@@ -229,33 +233,29 @@ func TestITClient_Add(t *testing.T) {
 			t.Errorf("domains = %v wantDomains = %v", domains, wantDomains)
 		}
 	})
-
+	stopIT(t)
 }
 
 func TestITClient_Get(t *testing.T) {
 
-	baseURL := "http://localhost:8080"
 	bits := 8
-
+	hashFn := sha256.New
+	baseURL, err := startIT(t, bits, hashFn)
+	if err != nil {
+		_ = stopIT(t)
+	}
 	cookieJar, _ := cookiejar.New(nil)
-	client := &http.Client{
+	httpClient := &http.Client{
 		Jar: cookieJar,
 	}
 
-	clt := New(client, Configuration{
-		hash:          sha256.New,
-		bits:          bits,
-		baseURL:       baseURL,
-		registerPath:  "/v1/register",
-		expkPath:      "/v1/login/expk",
-		challengePath: "/v1/login/challenge",
-		metadataPath:  "/v1/metadata",
-		addPath:       "/v1/add",
-		getPath:       "/v1/get",
-	}, NewInMemoryUserRepository())
+	clt := client.New(
+		httpClient,
+		client.NewConfiguration(baseURL, bits, hashFn),
+		client.NewInMemoryUserRepository())
 
-	user, _ := NewUser("metadata-user", bits)
-	err := clt.Register(user)
+	user, _ := client.NewUser("username", bits)
+	err = clt.Register(user)
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
@@ -263,7 +263,7 @@ func TestITClient_Get(t *testing.T) {
 	t.Run("should get the same password within one session", func(t *testing.T) {
 		// given
 		domain := "google.com"
-		err := clt.Login(user.username, "password")
+		err := clt.Login("username", "password")
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
@@ -291,7 +291,7 @@ func TestITClient_Get(t *testing.T) {
 	t.Run("should get the same password from two different sessions", func(t *testing.T) {
 		// given
 		domain := "google.com"
-		err := clt.Login(user.username, "password")
+		err := clt.Login("username", "password")
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
@@ -307,7 +307,7 @@ func TestITClient_Get(t *testing.T) {
 		}
 
 		clt.Logout()
-		err = clt.Login(user.username, "password")
+		err = clt.Login("username", "password")
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
@@ -322,20 +322,23 @@ func TestITClient_Get(t *testing.T) {
 		}
 	})
 
+	stopIT(t)
 }
 
-func before(t *testing.T) string {
+// === docker container utils ===
+func startIT(t *testing.T, bits int, hashFn func() hash.Hash) (string, error) {
+	stopIT(t)
 	ctx := context.Background()
 	cli, err := docker.NewEnvClient()
 	if err != nil {
-		t.Fatal(err)
+		return "", err
 	}
 
 	imageName := "latanassov/ossrv:0.1.0"
 
 	_, err = cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
-		t.Fatal(err)
+		return "", err
 	}
 
 	config := &container.Config{
@@ -365,12 +368,21 @@ func before(t *testing.T) string {
 		t.Fatal(err)
 	}
 
+	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-statusCh:
+	}
+
 	os.Setenv("OSSRV_DOCKER_ID", resp.ID)
 
-	return "http://localhost:9090"
+	return "http://localhost:9090", nil
 }
 
-func after(t *testing.T) {
+func stopIT(t *testing.T) error {
 	ctx := context.Background()
 	cli, err := docker.NewEnvClient()
 	if err != nil {
@@ -379,7 +391,18 @@ func after(t *testing.T) {
 
 	containerID := os.Getenv("OSSRV_DOCKER_ID")
 
-	if err := cli.ContainerStop(ctx, containerID, nil); err != nil {
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
 		t.Fatal(err)
 	}
+
+	for _, container := range containers {
+		if containerID == container.ID {
+			if err := cli.ContainerStop(ctx, containerID, nil); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	return nil
 }

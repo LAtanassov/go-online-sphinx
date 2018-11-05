@@ -3,6 +3,7 @@ package client
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha256"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -15,9 +16,6 @@ import (
 func TestClient_Register(t *testing.T) {
 
 	repo := NewInMemoryUserRepository()
-
-	cfg := NewConfiguration()
-
 	user, err := NewUser("username", 8)
 	if err != nil {
 		t.Error(err)
@@ -31,7 +29,7 @@ func TestClient_Register(t *testing.T) {
 		defer ts.Close()
 
 		// when
-		cfg.baseURL = ts.URL
+		cfg := NewConfiguration(ts.URL, 8, sha256.New)
 		err := New(http.DefaultClient, cfg, repo).Register(user)
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
@@ -53,7 +51,7 @@ func TestClient_Register(t *testing.T) {
 		defer ts.Close()
 
 		// when
-		cfg.baseURL = ts.URL
+		cfg := NewConfiguration(ts.URL, 8, sha256.New)
 		err := New(http.DefaultClient, cfg, repo).Register(user)
 
 		if err == nil {
@@ -70,8 +68,6 @@ func TestClient_Login(t *testing.T) {
 	}
 	repo := NewInMemoryUserRepository()
 	repo.Add(user)
-
-	cfg := NewConfiguration()
 
 	t.Run("should login with password", func(t *testing.T) {
 		// when
@@ -98,7 +94,7 @@ func TestClient_Login(t *testing.T) {
 		defer ts.Close()
 
 		// then
-		cfg.baseURL = ts.URL
+		cfg := NewConfiguration(ts.URL, 8, sha256.New)
 		err := New(http.DefaultClient, cfg, repo).Login("username", "password")
 
 		if err != nil {
@@ -116,8 +112,6 @@ func TestClient_Challenge(t *testing.T) {
 	}
 	repo := NewInMemoryUserRepository()
 	repo.Add(user)
-
-	cfg := NewConfiguration()
 
 	sID := big.NewInt(10)
 	ski := big.NewInt(10)
@@ -142,7 +136,7 @@ func TestClient_Challenge(t *testing.T) {
 		}))
 		defer ts.Close()
 		// when
-		cfg.baseURL = ts.URL
+		cfg := NewConfiguration(ts.URL, 8, sha256.New)
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 
@@ -162,7 +156,6 @@ func TestClient_GetMetadata(t *testing.T) {
 	repo := NewInMemoryUserRepository()
 	repo.Add(user)
 
-	cfg := NewConfiguration()
 	sID := big.NewInt(10)
 	ski := big.NewInt(10)
 	mk := big.NewInt(10)
@@ -184,7 +177,7 @@ func TestClient_GetMetadata(t *testing.T) {
 		}))
 		defer ts.Close()
 		// when
-		cfg.baseURL = ts.URL
+		cfg := NewConfiguration(ts.URL, 8, sha256.New)
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 
@@ -204,7 +197,6 @@ func TestClient_Add(t *testing.T) {
 	repo := NewInMemoryUserRepository()
 	repo.Add(user)
 
-	cfg := NewConfiguration()
 	sID := big.NewInt(10)
 	ski := big.NewInt(10)
 	mk := big.NewInt(10)
@@ -216,7 +208,7 @@ func TestClient_Add(t *testing.T) {
 		}))
 		defer ts.Close()
 		// when
-		cfg.baseURL = ts.URL
+		cfg := NewConfiguration(ts.URL, 8, sha256.New)
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 
@@ -236,7 +228,6 @@ func TestClient_Get(t *testing.T) {
 	repo := NewInMemoryUserRepository()
 	repo.Add(user)
 
-	cfg := NewConfiguration()
 	sID := big.NewInt(10)
 	ski := big.NewInt(10)
 	mk := big.NewInt(10)
@@ -258,7 +249,7 @@ func TestClient_Get(t *testing.T) {
 		}))
 		defer ts.Close()
 		// when
-		cfg.baseURL = ts.URL
+		cfg := NewConfiguration(ts.URL, 8, sha256.New)
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 
