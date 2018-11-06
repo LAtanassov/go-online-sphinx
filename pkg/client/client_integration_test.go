@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/cookiejar"
-	"os"
 	"reflect"
 	"testing"
 
@@ -368,17 +367,6 @@ func startIT(t *testing.T, bits int, hashFn func() hash.Hash) (string, error) {
 		t.Fatal(err)
 	}
 
-	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
-	select {
-	case err := <-errCh:
-		if err != nil {
-			t.Fatal(err)
-		}
-	case <-statusCh:
-	}
-
-	os.Setenv("OSSRV_DOCKER_ID", resp.ID)
-
 	return "http://localhost:9090", nil
 }
 
@@ -389,19 +377,13 @@ func stopIT(t *testing.T) error {
 		t.Fatal(err)
 	}
 
-	containerID := os.Getenv("OSSRV_DOCKER_ID")
-
 	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, container := range containers {
-		if containerID == container.ID {
-			if err := cli.ContainerStop(ctx, containerID, nil); err != nil {
-				t.Fatal(err)
-			}
-		}
+		cli.ContainerStop(ctx, container.ID, nil)
 	}
 
 	return nil
