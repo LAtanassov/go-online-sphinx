@@ -2,13 +2,8 @@ module github.com/LAtanassov/go-online-sphinx
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
-	github.com/Microsoft/go-winio v0.4.11 // indirect
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
-	github.com/docker/distribution v2.6.2+incompatible // indirect
-	github.com/docker/docker v1.13.1
-	github.com/docker/go-connections v0.4.0
-	github.com/docker/go-units v0.3.3 // indirect
 
 	github.com/go-kit/kit v0.7.0
 	github.com/go-logfmt/logfmt v0.3.0 // indirect
@@ -31,7 +26,6 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/spf13/viper v1.2.1
-	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
 	github.com/stretchr/testify v1.2.2 // indirect
 	golang.org/x/net v0.0.0-20181005035420-146acd28ed58 // indirect
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect
