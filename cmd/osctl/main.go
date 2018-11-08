@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"net/http"
 	"os"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/client"
@@ -23,7 +22,17 @@ func main() {
 	}
 }
 
+type cli struct {
+	clt    client.Client
+	config client.Configuration
+}
+
 func newCommand() *cobra.Command {
+
+	c := cli{
+		clt:    client.Client{},
+		config: client.Configuration{},
+	}
 
 	var rootCmd = cobra.Command{
 		Use:   "oscli",
@@ -39,31 +48,33 @@ func newCommand() *cobra.Command {
 	}
 
 	var registerCmd = &cobra.Command{
-		Use:   "register",
+		Use:   "register <username>",
 		Short: "Registers to Online SPHINX",
-		Long:  `Registers to Online SPHINX`,
-		Run:   registerRun,
+		Long:  `Registers to Online SPHINX using your username.`,
+		Run:   c.registerRun,
 	}
 
 	var loginCmd = &cobra.Command{
-		Use:   "login",
+		Use:   "login <username> <password>",
 		Short: "Login",
-		Long:  `Login to Online SPHINX`,
-		Run:   loginRun,
+		Long: `
+			Login to Online SPHINX using your username and password. 
+			TODO: passwords should not be handled in CLI like that.`,
+		Run: c.loginRun,
 	}
 
 	var addCmd = &cobra.Command{
-		Use:   "add",
-		Short: "Add New Domain",
-		Long:  `Add New Domain`,
-		Run:   addRun,
+		Use:   "add <domain>",
+		Short: "Add new Domain",
+		Long:  `Add new Domain`,
+		Run:   c.addRun,
 	}
 
 	var getCmd = &cobra.Command{
-		Use:   "get",
+		Use:   "get <domain>",
 		Short: "Get Password of Domain",
 		Long:  `Get Password of Domain`,
-		Run:   getRun,
+		Run:   c.getRun,
 	}
 
 	rootCmd.AddCommand(initCmd)
@@ -122,30 +133,61 @@ func initRun(cmd *cobra.Command, args []string) {
 	}
 }
 
-func registerRun(cmd *cobra.Command, args []string) {
-	cfg := client.Configuration{}
-	repo := client.NewInMemoryUserRepository()
-	user, err := client.NewUser("username", 8)
-	if err != nil {
-		return
+func (c *cli) registerRun(cmd *cobra.Command, args []string) {
+	if len(args) != 1 {
+		cmd.Help()
+		os.Exit(-1)
 	}
-	client.New(http.DefaultClient, cfg, repo).Register(user)
+
+	u, err := client.NewUser(args[0], c.config.Bits)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+
+	err = c.clt.Register(u)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
 }
 
-func loginRun(cmd *cobra.Command, args []string) {
-	cfg := client.Configuration{}
-	repo := client.NewInMemoryUserRepository()
-	client.New(http.DefaultClient, cfg, repo).Login("username", "password")
+func (c *cli) loginRun(cmd *cobra.Command, args []string) {
+	if len(args) != 2 {
+		cmd.Help()
+		os.Exit(-1)
+	}
+
+	err := c.clt.Login(args[0], args[1])
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
 }
 
-func addRun(cmd *cobra.Command, args []string) {
-	cfg := client.Configuration{}
-	repo := client.NewInMemoryUserRepository()
-	client.New(http.DefaultClient, cfg, repo).Add("google.com")
+func (c *cli) addRun(cmd *cobra.Command, args []string) {
+	if len(args) != 1 {
+		cmd.Help()
+		os.Exit(-1)
+	}
+
+	err := c.clt.Add(args[0])
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
 }
 
-func getRun(cmd *cobra.Command, args []string) {
-	cfg := client.Configuration{}
-	repo := client.NewInMemoryUserRepository()
-	client.New(http.DefaultClient, cfg, repo).Get("google.com")
+func (c *cli) getRun(cmd *cobra.Command, args []string) {
+	if len(args) != 1 {
+		cmd.Help()
+		os.Exit(-1)
+	}
+
+	pwd, err := c.clt.Get(args[0])
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+	fmt.Println(pwd)
 }

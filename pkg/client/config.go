@@ -7,7 +7,7 @@ import (
 // Configuration ...
 type Configuration struct {
 	hash          func() hash.Hash
-	bits          int
+	Bits          int
 	contentType   string
 	baseURL       string
 	registerPath  string
@@ -22,7 +22,7 @@ type Configuration struct {
 func NewConfiguration(baseURL string, bits int, hashFn func() hash.Hash) Configuration {
 	return Configuration{
 		hash:          hashFn,
-		bits:          8,
+		Bits:          8,
 		contentType:   "application/json",
 		baseURL:       baseURL,
 		registerPath:  "/v1/register",
