@@ -16,7 +16,7 @@ Therefore project was started using go-kit to embrace logging, monitoring and ot
 
 Another design decision made early on, because it is standard was to use REST+JSON. Marshalling and unmashalling also introduce code that has to be maintained - better solution would be to use grpc instead and generate stubs and skeletons.
 
-# Rough Protocol
+# Online SPHINX Protocol
 
 will be explained in details at some point.
 
