@@ -31,11 +31,7 @@ func benchmarkClient_Register(b *testing.B, bits int, hash func() hash.Hash) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		user, err := client.NewUser("registered-user", bits)
-		if err != nil {
-			b.Errorf("NewUser() error = %v", err)
-		}
-		err = clt.Register(user)
+		err := clt.Register("registered-user")
 		if err != nil {
 			b.Errorf("Register() error = %v", err)
 		}
@@ -64,11 +60,7 @@ func benchmarkClient_Login(b *testing.B, bits int, hash func() hash.Hash) {
 		client.NewConfiguration(baseURL, bits, hash),
 		client.NewInMemoryUserRepository())
 
-	user, err := client.NewUser("login-user", bits)
-	if err != nil {
-		b.Errorf("NewUser() error = %v", err)
-	}
-	err = clt.Register(user)
+	err := clt.Register("login-user")
 	if err != nil {
 		b.Errorf("Register() error = %v", err)
 	}
@@ -105,11 +97,7 @@ func benchmarkClient_Add(b *testing.B, bits int, hash func() hash.Hash) {
 		client.NewConfiguration(baseURL, bits, hash),
 		client.NewInMemoryUserRepository())
 
-	user, err := client.NewUser("add-domain-user", bits)
-	if err != nil {
-		b.Errorf("NewUser() error = %v", err)
-	}
-	err = clt.Register(user)
+	err := clt.Register("add-domain-user")
 	if err != nil {
 		b.Errorf("Register() error = %v", err)
 	}
@@ -153,11 +141,7 @@ func benchmarkClient_Get(b *testing.B, bits int, hash func() hash.Hash) {
 		client.NewConfiguration(baseURL, bits, hash),
 		client.NewInMemoryUserRepository())
 
-	user, err := client.NewUser("get-domain-user", bits)
-	if err != nil {
-		b.Errorf("NewUser() error = %v", err)
-	}
-	err = clt.Register(user)
+	err := clt.Register("get-domain-user")
 	if err != nil {
 		b.Errorf("Register() error = %v", err)
 	}

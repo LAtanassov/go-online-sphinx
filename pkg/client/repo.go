@@ -35,21 +35,21 @@ type User struct {
 	k        *big.Int
 }
 
-// NewUser generates new user with username.
-func NewUser(username string, bits int) (User, error) {
+// newUser generates new user with username.
+func newUser(username string, bits int) (User, error) {
 	q, err := rand.Prime(rand.Reader, bits)
 	if err != nil {
-		return User{}, errors.Wrap(err, "NewUser: failed to generate radnom prime")
+		return User{}, errors.Wrap(err, "newUser: failed to generate radnom prime")
 	}
 
 	cID, err := rand.Int(rand.Reader, q)
 	if err != nil {
-		return User{}, errors.Wrap(err, "NewUser: failed to generate random int")
+		return User{}, errors.Wrap(err, "newUser: failed to generate random int")
 	}
 
 	k, err := rand.Int(rand.Reader, q)
 	if err != nil {
-		return User{}, errors.Wrap(err, "NewUser: failed to generate random int")
+		return User{}, errors.Wrap(err, "newUser: failed to generate random int")
 	}
 	return User{
 		username: username,
@@ -92,4 +92,9 @@ func (r *UserRepository) Get(username string) (User, error) {
 		return User{}, errors.Wrap(ErrUserNotFound, "Get")
 	}
 	return u, nil
+}
+
+// NewSQLiteUserRepository ...
+func NewSQLiteUserRepository() *UserRepository {
+	return nil
 }

@@ -9,9 +9,9 @@ import (
 func TestUserRepository_Add(t *testing.T) {
 	t.Run("should add new user", func(t *testing.T) {
 		repo := NewInMemoryUserRepository()
-		user, err := NewUser("username", 8)
+		user, err := newUser("username", 8)
 		if err != nil {
-			t.Errorf("NewUser() failed error = %v", err)
+			t.Errorf("newUser() failed error = %v", err)
 		}
 		err = repo.Add(user)
 		if err != nil {
@@ -21,9 +21,9 @@ func TestUserRepository_Add(t *testing.T) {
 
 	t.Run("should return error if an existing user is added again", func(t *testing.T) {
 		repo := NewInMemoryUserRepository()
-		user, err := NewUser("username", 8)
+		user, err := newUser("username", 8)
 		if err != nil {
-			t.Errorf("NewUser() failed error = %v", err)
+			t.Errorf("newUser() failed error = %v", err)
 		}
 
 		err = repo.Add(user)
@@ -39,9 +39,9 @@ func TestUserRepository_Add(t *testing.T) {
 
 	t.Run("should return an existing user", func(t *testing.T) {
 		repo := NewInMemoryUserRepository()
-		expUser, err := NewUser("username", 8)
+		expUser, err := newUser("username", 8)
 		if err != nil {
-			t.Errorf("NewUser() failed error = %v", err)
+			t.Errorf("newUser() failed error = %v", err)
 		}
 
 		err = repo.Add(expUser)

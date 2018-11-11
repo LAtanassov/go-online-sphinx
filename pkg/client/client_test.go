@@ -16,10 +16,6 @@ import (
 func TestClient_Register(t *testing.T) {
 
 	repo := NewInMemoryUserRepository()
-	user, err := NewUser("username", 8)
-	if err != nil {
-		t.Error(err)
-	}
 
 	t.Run("should register a new user", func(t *testing.T) {
 		// given
@@ -30,12 +26,12 @@ func TestClient_Register(t *testing.T) {
 
 		// when
 		cfg := NewConfiguration(ts.URL, 8, sha256.New)
-		err := New(http.DefaultClient, cfg, repo).Register(user)
+		err := New(http.DefaultClient, cfg, repo).Register("username")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
 
-		_, err = repo.Get(user.username)
+		_, err = repo.Get("username")
 		if err != nil {
 			t.Errorf("Get() expect repo to return user but error = %v", err)
 		}
@@ -52,7 +48,7 @@ func TestClient_Register(t *testing.T) {
 
 		// when
 		cfg := NewConfiguration(ts.URL, 8, sha256.New)
-		err := New(http.DefaultClient, cfg, repo).Register(user)
+		err := New(http.DefaultClient, cfg, repo).Register("username")
 
 		if err == nil {
 			t.Errorf("Register() error = %v wantErr = %v", err, ErrTest)
@@ -62,7 +58,7 @@ func TestClient_Register(t *testing.T) {
 
 func TestClient_Login(t *testing.T) {
 	// before
-	user, err := NewUser("username", 8)
+	user, err := newUser("username", 8)
 	if err != nil {
 		t.Errorf("before test started - error = %v", err)
 	}
@@ -106,7 +102,7 @@ func TestClient_Login(t *testing.T) {
 
 func TestClient_Challenge(t *testing.T) {
 	// before
-	user, err := NewUser("username", 8)
+	user, err := newUser("username", 8)
 	if err != nil {
 		t.Errorf("before test started - error = %v", err)
 	}
@@ -149,7 +145,7 @@ func TestClient_Challenge(t *testing.T) {
 
 func TestClient_GetMetadata(t *testing.T) {
 	// before
-	user, err := NewUser("username", 8)
+	user, err := newUser("username", 8)
 	if err != nil {
 		t.Errorf("before test started - error = %v", err)
 	}
@@ -190,7 +186,7 @@ func TestClient_GetMetadata(t *testing.T) {
 
 func TestClient_Add(t *testing.T) {
 	// before
-	user, err := NewUser("username", 8)
+	user, err := newUser("username", 8)
 	if err != nil {
 		t.Errorf("before test started - error = %v", err)
 	}
@@ -221,7 +217,7 @@ func TestClient_Add(t *testing.T) {
 
 func TestClient_Get(t *testing.T) {
 	// before
-	user, err := NewUser("username", 8)
+	user, err := newUser("username", 8)
 	if err != nil {
 		t.Errorf("before test started - error = %v", err)
 	}

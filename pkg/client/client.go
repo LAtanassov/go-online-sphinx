@@ -55,7 +55,12 @@ type Repository interface {
 // It might fail in case
 // * an user with the same ID already exists and
 // * Online SPHINX service is offline.
-func (clt *Client) Register(user User) error {
+func (clt *Client) Register(username string) error {
+
+	user, err := newUser(username, clt.config.Bits)
+	if err != nil {
+		return errors.Wrap(err, "Register: failed to create new User")
+	}
 
 	rd, err := contract.MarshalRegisterRequest(contract.RegisterRequest{CID: user.cID})
 	if err != nil {

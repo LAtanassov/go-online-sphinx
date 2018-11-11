@@ -25,12 +25,8 @@ func TestITClient_Register(t *testing.T) {
 			&http.Client{},
 			client.NewConfiguration(baseURL, bits, hashFn),
 			client.NewInMemoryUserRepository())
-		user, err := client.NewUser("registered-user", 8)
-		if err != nil {
-			t.Errorf("NewUser() error = %v", err)
-		}
 
-		err = clt.Register(user)
+		err := clt.Register("registered-user")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
@@ -41,18 +37,13 @@ func TestITClient_Register(t *testing.T) {
 			&http.Client{},
 			client.NewConfiguration(baseURL, bits, hashFn),
 			client.NewInMemoryUserRepository())
-		// given
-		user, err := client.NewUser("double-registered-user", 8)
-		if err != nil {
-			t.Errorf("NewUser() error = %v", err)
-		}
 
-		err = clt.Register(user)
+		err := clt.Register("double-registered-user")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
 		// when
-		err = clt.Register(user)
+		err = clt.Register("double-registered-user")
 		if err == nil {
 			t.Errorf("Register() no error but got err = %v", err)
 		}
@@ -83,12 +74,7 @@ func TestITClient_Login(t *testing.T) {
 		client.NewConfiguration(baseURL, bits, hashFn),
 		client.NewInMemoryUserRepository())
 
-	user, err := client.NewUser("login-username", bits)
-	if err != nil {
-		t.Errorf("client.NewUser() error = %v", err)
-	}
-
-	err = clt.Register(user)
+	err = clt.Register("login-username")
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
@@ -137,12 +123,7 @@ func TestITClient_GetMetadata(t *testing.T) {
 		client.NewConfiguration(baseURL, bits, hashFn),
 		client.NewInMemoryUserRepository())
 
-	user, err := client.NewUser("get-metadata-username", bits)
-	if err != nil {
-		t.Errorf("NewUser() error = %v", err)
-	}
-
-	err = clt.Register(user)
+	err = clt.Register("get-metadata-username")
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
@@ -202,8 +183,7 @@ func TestITClient_Add(t *testing.T) {
 		client.NewConfiguration(baseURL, bits, hashFn),
 		client.NewInMemoryUserRepository())
 
-	user, _ := client.NewUser("add-domain-username", bits)
-	err := clt.Register(user)
+	err := clt.Register("add-domain-username")
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
@@ -247,12 +227,7 @@ func TestITClient_Get(t *testing.T) {
 		client.NewConfiguration(baseURL, bits, hashFn),
 		client.NewInMemoryUserRepository())
 
-	user, err := client.NewUser("get-domain-username", bits)
-	if err != nil {
-		t.Errorf("Register() error = %v", err)
-	}
-
-	err = clt.Register(user)
+	err := clt.Register("get-domain-username")
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}

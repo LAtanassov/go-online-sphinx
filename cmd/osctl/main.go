@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/client"
 
@@ -23,28 +25,27 @@ func main() {
 }
 
 type cli struct {
-	clt    client.Client
-	config client.Configuration
+	clt *client.Client
 }
 
 func newCommand() *cobra.Command {
 
+	tr := &http.Transport{
+		IdleConnTimeout: 30 * time.Second,
+	}
+
 	c := cli{
-		clt:    client.Client{},
-		config: client.Configuration{},
+		client.New(
+			&http.Client{Transport: tr},
+			getConfiguration(),
+			client.NewSQLiteUserRepository(),
+		),
 	}
 
 	var rootCmd = cobra.Command{
 		Use:   "oscli",
 		Short: "Online SPHINX CLI",
 		Long:  `Online SPHINX CLI is a new password mananger inspired by SPHINX`,
-	}
-
-	var initCmd = &cobra.Command{
-		Use:   "init",
-		Short: "Initialzes Online SPHINX",
-		Long:  `Initialzes Online SPHINX`,
-		Run:   initRun,
 	}
 
 	var registerCmd = &cobra.Command{
@@ -77,7 +78,6 @@ func newCommand() *cobra.Command {
 		Run:   c.getRun,
 	}
 
-	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(registerCmd)
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(addCmd)
@@ -87,7 +87,7 @@ func newCommand() *cobra.Command {
 
 }
 
-func getConfig() *viper.Viper {
+func getConfiguration() client.Configuration {
 	config := viper.New()
 
 	home, err := homedir.Dir()
@@ -100,12 +100,12 @@ func getConfig() *viper.Viper {
 	config.SetConfigName(".osctl")
 	config.ReadInConfig()
 
-	return config
+	return client.Configuration{}
 }
 
 func initRun(cmd *cobra.Command, args []string) {
 
-	config := getConfig()
+	config := viper.New()
 	config.Set("app.name", "online-sphinx")
 	config.Set("app.version", "0.1.0")
 
@@ -139,13 +139,7 @@ func (c *cli) registerRun(cmd *cobra.Command, args []string) {
 		os.Exit(-1)
 	}
 
-	u, err := client.NewUser(args[0], c.config.Bits)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-
-	err = c.clt.Register(u)
+	err := c.clt.Register(args[0])
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
