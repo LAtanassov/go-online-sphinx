@@ -92,13 +92,13 @@ func MakeChallengeHandler(s Service) http.Handler {
 
 		session, err := store.Get(req, "online-sphinx")
 		if err != nil {
-			contract.MarshalError(resp, ErrLoginRequired)
+			contract.MarshalError(resp, errors.Wrap(ErrLoginRequired, "called /v1/login/challenge without session"))
 			return
 		}
 
 		skiHex, ok := session.Values["SKi"].(string)
 		if !ok {
-			contract.MarshalError(resp, ErrLoginRequired)
+			contract.MarshalError(resp, errors.Wrap(ErrLoginRequired, "called /v1/login/challenge without session"))
 			return
 		}
 		ski := new(big.Int)
@@ -313,7 +313,7 @@ func MakeAccessControl(h http.Handler) http.Handler {
 // MakeLivenessHandler returns liveness handler
 func MakeLivenessHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
 }
@@ -321,7 +321,7 @@ func MakeLivenessHandler() http.Handler {
 // MakeReadinessHandler return readiness handler
 func MakeReadinessHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
 }

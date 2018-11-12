@@ -38,7 +38,7 @@ func newCommand() *cobra.Command {
 		client.New(
 			&http.Client{Transport: tr},
 			getConfiguration(),
-			client.NewSQLiteUserRepository(),
+			client.NewSQLiteUserRepository("~/.oscli.sqli.db"),
 		),
 	}
 

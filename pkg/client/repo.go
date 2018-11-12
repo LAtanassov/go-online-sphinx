@@ -39,17 +39,17 @@ type User struct {
 func newUser(username string, bits int) (User, error) {
 	q, err := rand.Prime(rand.Reader, bits)
 	if err != nil {
-		return User{}, errors.Wrap(err, "newUser: failed to generate radnom prime")
+		return User{}, errors.Wrapf(err, "newUser %s, %d bits: failed to generate radnom prime", username, bits)
 	}
 
 	cID, err := rand.Int(rand.Reader, q)
 	if err != nil {
-		return User{}, errors.Wrap(err, "newUser: failed to generate random int")
+		return User{}, errors.Wrapf(err, "newUser %s, %d bits: failed to generate random int", username, bits)
 	}
 
 	k, err := rand.Int(rand.Reader, q)
 	if err != nil {
-		return User{}, errors.Wrap(err, "newUser: failed to generate random int")
+		return User{}, errors.Wrapf(err, "newUser %s, %d bits: failed to generate random int", username, bits)
 	}
 	return User{
 		username: username,
@@ -75,7 +75,7 @@ func (r *UserRepository) Add(u User) error {
 
 	_, ok := r.users[u.username]
 	if ok {
-		return errors.Wrap(ErrUserAlreadyExists, "Add")
+		return errors.Wrapf(ErrUserAlreadyExists, "Add: %s", u.username)
 	}
 
 	r.users[u.username] = u
@@ -89,12 +89,12 @@ func (r *UserRepository) Get(username string) (User, error) {
 
 	u, ok := r.users[username]
 	if !ok {
-		return User{}, errors.Wrap(ErrUserNotFound, "Get")
+		return User{}, errors.Wrapf(ErrUserNotFound, "Get %s", username)
 	}
 	return u, nil
 }
 
 // NewSQLiteUserRepository ...
-func NewSQLiteUserRepository() *UserRepository {
+func NewSQLiteUserRepository(fn string) *UserRepository {
 	return nil
 }

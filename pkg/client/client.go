@@ -57,7 +57,7 @@ type Repository interface {
 // * Online SPHINX service is offline.
 func (clt *Client) Register(username string) error {
 
-	user, err := newUser(username, clt.config.Bits)
+	user, err := newUser(username, clt.config.bits)
 	if err != nil {
 		return errors.Wrap(err, "Register: failed to create new User")
 	}

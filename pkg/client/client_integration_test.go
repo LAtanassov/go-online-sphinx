@@ -134,6 +134,11 @@ func TestITClient_GetMetadata(t *testing.T) {
 			t.Errorf("Login() error = %v", err)
 		}
 
+		err = clt.Challenge()
+		if err != nil {
+			t.Errorf("Challenge() error = %v", err)
+		}
+
 		domains, err := clt.GetMetadata()
 		if err != nil {
 			t.Errorf("GetMetadata() error = %v", err)
@@ -151,6 +156,12 @@ func TestITClient_GetMetadata(t *testing.T) {
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
+
+		err = clt.Challenge()
+		if err != nil {
+			t.Errorf("Challenge() error = %v", err)
+		}
+
 		err = clt.Add(wantDomains[0])
 		if err != nil {
 			t.Errorf("Add() error = %v", err)
@@ -195,6 +206,12 @@ func TestITClient_Add(t *testing.T) {
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
+
+		err = clt.Challenge()
+		if err != nil {
+			t.Errorf("Challenge() error = %v", err)
+		}
+
 		err = clt.Add(wantDomains[0])
 		if err != nil {
 			t.Errorf("Add() error = %v", err)
@@ -239,6 +256,12 @@ func TestITClient_Get(t *testing.T) {
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
+
+		err = clt.Challenge()
+		if err != nil {
+			t.Errorf("Challenge() error = %v", err)
+		}
+
 		err = clt.Add(domain)
 		if err != nil {
 			t.Errorf("Add() error = %v", err)
@@ -267,6 +290,12 @@ func TestITClient_Get(t *testing.T) {
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
 		}
+
+		err = clt.Challenge()
+		if err != nil {
+			t.Errorf("Challenge() error = %v", err)
+		}
+
 		err = clt.Add(domain)
 		if err != nil {
 			t.Errorf("Add() error = %v", err)

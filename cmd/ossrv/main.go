@@ -61,7 +61,7 @@ func main() {
 	httpAddr := flag.String("ossrv.addr", c.Addr, "http listen address")
 	keyLength := flag.Int("ossrv.key.length", c.KeyLength, "key length")
 	hashName := flag.String("ossrv.hash", c.Hash, "hash function")
-	idhex := flag.String("ossrv.id.hex", c.KHex, "secret k in hex")
+	idhex := flag.String("ossrv.id.hex", c.IDHex, "secret k in hex")
 	khex := flag.String("ossrv.k.hex", c.KHex, "secret k in hex")
 	q0hex := flag.String("ossrv.q0.hex", c.Q0Hex, "secret Q0 in hex")
 	flag.Parse()
@@ -75,8 +75,7 @@ func main() {
 
 	// === service layer ===
 
-	var users service.UserRepository
-	users = service.NewUserRepository()
+	users := service.NewUserRepository()
 
 	fieldKeys := []string{"method"}
 	cfg := service.NewConfiguration(id, k, q0, big.NewInt(int64(*keyLength)), hashFn)
