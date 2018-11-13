@@ -25,8 +25,11 @@ func TestClient_Register(t *testing.T) {
 		defer ts.Close()
 
 		// when
-		cfg := NewConfiguration(ts.URL, 8, sha256.New)
-		err := New(http.DefaultClient, cfg, repo).Register("username")
+		cfg, err := NewConfiguration(ts.URL, 8, sha256.New)
+		if err != nil {
+			t.Errorf("NewConfiguration() error = %v", err)
+		}
+		err = New(http.DefaultClient, cfg, repo).Register("username")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
@@ -47,8 +50,11 @@ func TestClient_Register(t *testing.T) {
 		defer ts.Close()
 
 		// when
-		cfg := NewConfiguration(ts.URL, 8, sha256.New)
-		err := New(http.DefaultClient, cfg, repo).Register("username")
+		cfg, err := NewConfiguration(ts.URL, 8, sha256.New)
+		if err != nil {
+			t.Errorf("NewConfiguration() error = %v", err)
+		}
+		err = New(http.DefaultClient, cfg, repo).Register("username")
 
 		if err == nil {
 			t.Errorf("Register() error = %v wantErr = %v", err, ErrTest)
@@ -90,8 +96,11 @@ func TestClient_Login(t *testing.T) {
 		defer ts.Close()
 
 		// then
-		cfg := NewConfiguration(ts.URL, 8, sha256.New)
-		err := New(http.DefaultClient, cfg, repo).Login("username", "password")
+		cfg, err := NewConfiguration(ts.URL, 8, sha256.New)
+		if err != nil {
+			t.Errorf("NewConfiguration() error = %v", err)
+		}
+		err = New(http.DefaultClient, cfg, repo).Login("username", "password")
 
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
@@ -132,7 +141,10 @@ func TestClient_Challenge(t *testing.T) {
 		}))
 		defer ts.Close()
 		// when
-		cfg := NewConfiguration(ts.URL, 8, sha256.New)
+		cfg, err := NewConfiguration(ts.URL, 8, sha256.New)
+		if err != nil {
+			t.Errorf("NewConfiguration() error = %v", err)
+		}
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 
@@ -173,11 +185,14 @@ func TestClient_GetMetadata(t *testing.T) {
 		}))
 		defer ts.Close()
 		// when
-		cfg := NewConfiguration(ts.URL, 8, sha256.New)
+		cfg, err := NewConfiguration(ts.URL, 8, sha256.New)
+		if err != nil {
+			t.Errorf("NewConfiguration() error = %v", err)
+		}
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 
-		_, err := clt.GetMetadata()
+		_, err = clt.GetMetadata()
 		if err != nil {
 			t.Errorf("GetMetadata() error = %v", err)
 		}
@@ -204,11 +219,14 @@ func TestClient_Add(t *testing.T) {
 		}))
 		defer ts.Close()
 		// when
-		cfg := NewConfiguration(ts.URL, 8, sha256.New)
+		cfg, err := NewConfiguration(ts.URL, 8, sha256.New)
+		if err != nil {
+			t.Errorf("NewConfiguration() error = %v", err)
+		}
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 
-		err := clt.Add("google.com")
+		err = clt.Add("google.com")
 		if err != nil {
 			t.Errorf("Add() error = %v", err)
 		}
@@ -245,11 +263,14 @@ func TestClient_Get(t *testing.T) {
 		}))
 		defer ts.Close()
 		// when
-		cfg := NewConfiguration(ts.URL, 8, sha256.New)
+		cfg, err := NewConfiguration(ts.URL, 8, sha256.New)
+		if err != nil {
+			t.Errorf("NewConfiguration() error = %v", err)
+		}
 		clt := New(http.DefaultClient, cfg, repo)
 		clt.session = NewSession(user, sID, ski, mk)
 
-		_, err := clt.Get("google.com")
+		_, err = clt.Get("google.com")
 		if err != nil {
 			t.Errorf("Get() error = %v", err)
 		}

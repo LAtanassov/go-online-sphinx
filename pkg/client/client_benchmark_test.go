@@ -34,9 +34,12 @@ func BenchmarkClient_Register_SHA256_3072Bits(b *testing.B) {
 func benchmarkClient_Register(b *testing.B, bits int, hash func() hash.Hash) {
 
 	baseURL := "http://localhost:8080"
-
+	cfg, err := client.NewConfiguration(baseURL, bits, hash)
+	if err != nil {
+		b.Errorf("NewConfiguration() error = %v", err)
+	}
 	clt := client.New(&http.Client{},
-		client.NewConfiguration(baseURL, bits, hash),
+		cfg,
 		client.NewInMemoryUserRepository())
 
 	users := generator(b, b.N)
@@ -76,9 +79,12 @@ func BenchmarkClient_Login_SHA256_3072Bits(b *testing.B) {
 func benchmarkClient_Login(b *testing.B, bits int, hash func() hash.Hash) {
 
 	baseURL := "http://localhost:8080"
-
+	cfg, err := client.NewConfiguration(baseURL, bits, hash)
+	if err != nil {
+		b.Errorf("NewConfiguration() error = %v", err)
+	}
 	clt := client.New(&http.Client{},
-		client.NewConfiguration(baseURL, bits, hash),
+		cfg,
 		client.NewInMemoryUserRepository())
 
 	users := generator(b, b.N)
@@ -129,12 +135,15 @@ func BenchmarkClient_Add_SHA256_3072Bits(b *testing.B) {
 func benchmarkClient_Add(b *testing.B, bits int, hash func() hash.Hash) {
 
 	baseURL := "http://localhost:8080"
-
+	cfg, err := client.NewConfiguration(baseURL, bits, hash)
+	if err != nil {
+		b.Errorf("NewConfiguration() error = %v", err)
+	}
 	clt := client.New(&http.Client{},
-		client.NewConfiguration(baseURL, bits, hash),
+		cfg,
 		client.NewInMemoryUserRepository())
 
-	err := clt.Register("add-domain-user")
+	err = clt.Register("add-domain-user")
 	if err != nil {
 		b.Errorf("Register() error = %+v", err)
 	}
@@ -188,12 +197,15 @@ var pwd string
 func benchmarkClient_Get(b *testing.B, bits int, hash func() hash.Hash) {
 
 	baseURL := "http://localhost:8080"
-
+	cfg, err := client.NewConfiguration(baseURL, bits, hash)
+	if err != nil {
+		b.Errorf("NewConfiguration() error = %v", err)
+	}
 	clt := client.New(&http.Client{},
-		client.NewConfiguration(baseURL, bits, hash),
+		cfg,
 		client.NewInMemoryUserRepository())
 
-	err := clt.Register("get-domain-user")
+	err = clt.Register("get-domain-user")
 	if err != nil {
 		b.Errorf("Register() error = %v", err)
 	}

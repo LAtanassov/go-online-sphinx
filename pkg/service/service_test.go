@@ -12,13 +12,10 @@ import (
 func TestOnlineSphinx_ExpK(t *testing.T) {
 	t.Run("should return error if user does not exist", func(t *testing.T) {
 		// given
-		r := New(NewUserRepository(), Configuration{
-			sID:  big.NewInt(1),
-			k:    big.NewInt(1),
-			q0:   big.NewInt(1),
-			bits: big.NewInt(1),
-			hash: sha256.New,
-		})
+		r := New(
+			NewUserRepository(),
+			NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+		)
 
 		// when
 		_, _, _, _, _, _, err := r.ExpK(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1))
@@ -30,13 +27,7 @@ func TestOnlineSphinx_ExpK(t *testing.T) {
 
 	t.Run("should b ** k mod q ", func(t *testing.T) {
 		// given
-		config := Configuration{
-			sID:  big.NewInt(1),
-			k:    big.NewInt(13),
-			q0:   big.NewInt(1),
-			bits: big.NewInt(1),
-			hash: sha256.New,
-		}
+		config := NewConfiguration(big.NewInt(1), big.NewInt(13), big.NewInt(1), big.NewInt(1), sha256.New)
 		r := New(NewUserRepository(), config)
 		r.Register(one)
 		cID := one
@@ -59,13 +50,10 @@ func TestOnlineSphinx_ExpK(t *testing.T) {
 
 func TestOnlineSphinx_Challenge(t *testing.T) {
 	t.Run("should return g ** k mod q", func(t *testing.T) {
-		s := New(NewUserRepository(), Configuration{
-			sID:  big.NewInt(1),
-			k:    big.NewInt(1),
-			q0:   big.NewInt(1),
-			bits: big.NewInt(1),
-			hash: sha256.New,
-		})
+		s := New(
+			NewUserRepository(),
+			NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+		)
 		g := big.NewInt(42)
 		ski := big.NewInt(24)
 		q := big.NewInt(52)
@@ -85,13 +73,10 @@ func TestOnlineSphinx_Challenge(t *testing.T) {
 func TestOnlineSphinx_GetMetadata(t *testing.T) {
 	t.Run("should return all domains", func(t *testing.T) {
 		// given
-		s := New(NewUserRepository(), Configuration{
-			sID:  big.NewInt(1),
-			k:    big.NewInt(1),
-			q0:   big.NewInt(1),
-			bits: big.NewInt(1),
-			hash: sha256.New,
-		})
+		s := New(
+			NewUserRepository(),
+			NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+		)
 		cID := big.NewInt(1)
 
 		s.Register(cID)
@@ -108,13 +93,10 @@ func TestOnlineSphinx_GetMetadata(t *testing.T) {
 
 func TestOnlineSphinx_AddVault(t *testing.T) {
 	t.Run("should add vault", func(t *testing.T) {
-		s := New(NewUserRepository(), Configuration{
-			sID:  big.NewInt(1),
-			k:    big.NewInt(1),
-			q0:   big.NewInt(1),
-			bits: big.NewInt(1),
-			hash: sha256.New,
-		})
+		s := New(
+			NewUserRepository(),
+			NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+		)
 		cID := big.NewInt(1)
 
 		s.Register(cID)
@@ -128,13 +110,10 @@ func TestOnlineSphinx_AddVault(t *testing.T) {
 func TestOnlineSphinx_GetVault(t *testing.T) {
 	t.Run("should get vault", func(t *testing.T) {
 		// given
-		s := New(NewUserRepository(), Configuration{
-			sID:  big.NewInt(1),
-			k:    big.NewInt(1),
-			q0:   big.NewInt(1),
-			bits: big.NewInt(1),
-			hash: sha256.New,
-		})
+		s := New(
+			NewUserRepository(),
+			NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+		)
 
 		cID := big.NewInt(1)
 		s.Register(cID)
@@ -149,13 +128,10 @@ func TestOnlineSphinx_GetVault(t *testing.T) {
 
 func TestOnlineSphinx_VerifyMAC(t *testing.T) {
 	t.Run("should verify MAC", func(t *testing.T) {
-		s := New(NewUserRepository(), Configuration{
-			sID:  big.NewInt(1),
-			k:    big.NewInt(1),
-			q0:   big.NewInt(1),
-			bits: big.NewInt(1),
-			hash: sha256.New,
-		})
+		s := New(
+			NewUserRepository(),
+			NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+		)
 
 		ski := big.NewInt(31)
 		want := crypto.HmacData(sha256.New, ski.Bytes(), []byte("data"))

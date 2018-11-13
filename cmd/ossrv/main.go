@@ -99,21 +99,23 @@ func main() {
 
 	// === transport layer ===
 
+	t := service.NewHTTPTransport(svc, kitlog.With(logger, "component", "transport"))
+
 	mux := http.NewServeMux()
 
-	mux.Handle("/v1/register", service.MakeRegisterHandler(svc))
-	mux.Handle("/v1/login/expk", service.MakeExpKHandler(svc))
-	mux.Handle("/v1/login/challenge", service.MakeChallengeHandler(svc))
+	mux.Handle("/v1/register", t.MakeRegisterHandler())
+	mux.Handle("/v1/login/expk", t.MakeExpKHandler())
+	mux.Handle("/v1/login/challenge", t.MakeChallengeHandler())
 
-	mux.Handle("/v1/metadata", service.MakeMetadataHandler(svc))
-	mux.Handle("/v1/add", service.MakeAddHandler(svc))
-	mux.Handle("/v1/get", service.MakeGetHandler(svc))
+	mux.Handle("/v1/metadata", t.MakeMetadataHandler())
+	mux.Handle("/v1/add", t.MakeAddHandler())
+	mux.Handle("/v1/get", t.MakeGetHandler())
 
 	handler := http.NewServeMux()
 	handler.Handle("/", service.MakeAccessControl(mux))
 	handler.Handle("/metrics", promhttp.Handler())
-	handler.Handle("/_status/liveness", service.MakeLivenessHandler())
-	handler.Handle("/_status/readiness", service.MakeReadinessHandler())
+	handler.Handle("/_status/liveness", t.MakeLivenessHandler())
+	handler.Handle("/_status/readiness", t.MakeReadinessHandler())
 
 	// === startup ===
 

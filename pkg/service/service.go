@@ -66,12 +66,12 @@ func New(users UserRepository, cfg Configuration) *OnlineSphinx {
 	}
 }
 
-// Register an user with its id
+// Register an user with its cID.
+// Returns error if user with same cID already exists,
+// or if could not set user to repository.
 func (o *OnlineSphinx) Register(cID *big.Int) error {
-	max := new(big.Int)
-	max.Exp(two, o.config.bits, nil)
 
-	kv, err := rand.Int(rand.Reader, max)
+	kv, err := rand.Int(rand.Reader, o.config.max)
 	if err != nil {
 		return errors.Wrap(err, "Register: failed to generate random int kv")
 	}
@@ -81,16 +81,15 @@ func (o *OnlineSphinx) Register(cID *big.Int) error {
 	case ErrUserNotFound:
 		// continue
 	default:
-		return errors.Wrapf(err, "Register: failed to get user with ID %v", cID)
+		return errors.Wrapf(err, "Register: failed to register user with cID=%v", cID)
 	}
 
-	err = o.users.Set(User{
-		cID:    cID,
-		kv:     kv,
-		vaults: make(map[string]Vault),
-	})
-
-	return errors.Wrapf(err, "Register: failed to set user with ID %v", cID)
+	return errors.Wrapf(
+		o.users.Set(User{
+			cID:    cID,
+			kv:     kv,
+			vaults: make(map[string]Vault),
+		}), "Register: failed to users.set() with ID %v", cID)
 }
 
 // ExpK returns r**k mod |2q + 1|
@@ -100,10 +99,7 @@ func (o *OnlineSphinx) ExpK(cID, cNonce, b, q *big.Int) (ski, sID, sNonce, bd, q
 
 	bd = crypto.ExpInGroup(b, o.config.k, q)
 
-	max := new(big.Int)
-	max.Exp(two, o.config.bits, nil)
-
-	sNonce, err = rand.Int(rand.Reader, max)
+	sNonce, err = rand.Int(rand.Reader, o.config.max)
 	if err != nil {
 		err = errors.Wrap(err, "ExpK: failed to generate random int sNonce")
 		return
@@ -111,7 +107,7 @@ func (o *OnlineSphinx) ExpK(cID, cNonce, b, q *big.Int) (ski, sID, sNonce, bd, q
 
 	u, err := o.users.Get(cID)
 	if err != nil {
-		err = errors.Wrapf(err, "ExpK: failed to get user with ID %v", cID)
+		err = errors.Wrapf(err, "ExpK: failed to users.get() user with cID=%v", cID)
 		return
 	}
 	kv = u.kv
@@ -131,7 +127,7 @@ func (o *OnlineSphinx) Challenge(ski, g, q *big.Int) (r *big.Int, err error) {
 func (o *OnlineSphinx) GetMetadata(cID *big.Int) (domains []string, err error) {
 	u, err := o.users.Get(cID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "GetMetadata: failed to get user with ID %v", cID)
+		return nil, errors.Wrapf(err, "GetMetadata: failed to users.get() user with cID=%v", cID)
 	}
 	domains = make([]string, len(u.vaults))
 	var i int
@@ -150,7 +146,7 @@ func (o *OnlineSphinx) VerifyMAC(mac []byte, ski *big.Int, data ...[]byte) error
 	vmac := crypto.HmacData(o.config.hash, ski.Bytes(), data...)
 
 	if bytes.Compare(mac, vmac) != 0 {
-		return errors.Wrap(ErrMacMismatch, "VerifyMAC")
+		return errors.Wrapf(ErrMacMismatch, "VerifyMAC: given mac=%v and calculated mac=%v are different", mac, vmac)
 	}
 	return nil
 }
@@ -158,29 +154,26 @@ func (o *OnlineSphinx) VerifyMAC(mac []byte, ski *big.Int, data ...[]byte) error
 // Add by generating random keys k, qj for specific 'domain'
 func (o *OnlineSphinx) Add(cID *big.Int, domain string) error {
 
-	max := new(big.Int)
-	max.Exp(two, o.config.bits, nil)
-
-	k, err := rand.Int(rand.Reader, max)
+	k, err := rand.Int(rand.Reader, o.config.max)
 	if err != nil {
 		return errors.Wrap(err, "Add: failed to generate random int k")
 	}
 
-	qj, err := rand.Int(rand.Reader, max)
+	qj, err := rand.Int(rand.Reader, o.config.max)
 	if err != nil {
 		return errors.Wrap(err, "Add: failed to generate random int qj")
 	}
 
 	u, err := o.users.Get(cID)
 	if err != nil {
-		return errors.Wrapf(err, "Add: failed to get user with ID %v", cID)
+		return errors.Wrapf(err, "Add: failed to users.get() user with cID=%v", cID)
 	}
 	u.vaults[domain] = Vault{
 		k:  k,
 		qj: qj,
 	}
 
-	return errors.Wrapf(o.users.Set(u), "Add: failed to add user with ID %v and domain %v", cID, domain)
+	return errors.Wrapf(o.users.Set(u), "Add: failed to users.add() user with cID=%v and domain=%v", cID, domain)
 }
 
 // Get return bmk**bj and qj associated with domain
@@ -188,12 +181,12 @@ func (o *OnlineSphinx) Get(cID *big.Int, domain string, bmk, q *big.Int) (bj, qj
 
 	u, err := o.users.Get(cID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrapf(err, "Get: failed to users.get() user with cID=%v", cID)
 	}
 
 	v, ok := u.vaults[domain]
 	if !ok {
-		return nil, nil, errors.Wrapf(ErrDomainNotFound, "Get: failed to get user with ID %v and domain %v", cID, domain)
+		return nil, nil, errors.Wrapf(ErrDomainNotFound, "Get: failed to get user with cID=%v and domain=%v", cID, domain)
 	}
 
 	return crypto.ExpInGroup(bmk, v.k, q), v.qj, nil

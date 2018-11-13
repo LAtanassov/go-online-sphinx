@@ -4,7 +4,6 @@ package client_test
 
 import (
 	"crypto/sha256"
-	"math/big"
 	"net/http"
 	"net/http/cookiejar"
 	"reflect"
@@ -14,31 +13,39 @@ import (
 )
 
 var baseURL = "http://localhost:8080"
+var bits = 8
+var hashFn = sha256.New
 
 func TestITClient_Register(t *testing.T) {
 
-	bits := 8
-	hashFn := sha256.New
-
 	t.Run("should register a new user ID", func(t *testing.T) {
+
+		cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
+		if err != nil {
+			t.Errorf("NewConfiguration() error = %v", err)
+		}
 		clt := client.New(
 			&http.Client{},
-			client.NewConfiguration(baseURL, bits, hashFn),
+			cfg,
 			client.NewInMemoryUserRepository())
 
-		err := clt.Register("registered-user")
+		err = clt.Register("registered-user")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
 	})
 
 	t.Run("should not be able to register with an existing user ID", func(t *testing.T) {
+		cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
+		if err != nil {
+			t.Errorf("NewConfiguration() error = %v", err)
+		}
 		clt := client.New(
 			&http.Client{},
-			client.NewConfiguration(baseURL, bits, hashFn),
+			cfg,
 			client.NewInMemoryUserRepository())
 
-		err := clt.Register("double-registered-user")
+		err = clt.Register("double-registered-user")
 		if err != nil {
 			t.Errorf("Register() error = %v", err)
 		}
@@ -53,11 +60,6 @@ func TestITClient_Register(t *testing.T) {
 
 func TestITClient_Login(t *testing.T) {
 
-	bits := 8
-	hashFn := sha256.New
-
-	var two = big.NewInt(2)
-
 	cookieJar, err := cookiejar.New(nil)
 	if err != nil {
 		t.Errorf("cookiejar.New() error = %v", err)
@@ -66,12 +68,13 @@ func TestITClient_Login(t *testing.T) {
 		Jar: cookieJar,
 	}
 
-	max := new(big.Int)
-	max.Exp(two, big.NewInt(int64(bits)), nil)
-
+	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
+	if err != nil {
+		t.Errorf("NewConfiguration() error = %v", err)
+	}
 	clt := client.New(
 		httpClient,
-		client.NewConfiguration(baseURL, bits, hashFn),
+		cfg,
 		client.NewInMemoryUserRepository())
 
 	err = clt.Register("login-username")
@@ -106,9 +109,6 @@ func TestITClient_Login(t *testing.T) {
 
 func TestITClient_GetMetadata(t *testing.T) {
 
-	bits := 8
-	hashFn := sha256.New
-
 	cookieJar, err := cookiejar.New(nil)
 	if err != nil {
 		t.Errorf("cookiejar.New() error = %v", err)
@@ -117,10 +117,13 @@ func TestITClient_GetMetadata(t *testing.T) {
 	httpClient := &http.Client{
 		Jar: cookieJar,
 	}
-
+	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
+	if err != nil {
+		t.Errorf("NewConfiguration() error = %v", err)
+	}
 	clt := client.New(
 		httpClient,
-		client.NewConfiguration(baseURL, bits, hashFn),
+		cfg,
 		client.NewInMemoryUserRepository())
 
 	err = clt.Register("get-metadata-username")
@@ -181,20 +184,20 @@ func TestITClient_GetMetadata(t *testing.T) {
 
 func TestITClient_Add(t *testing.T) {
 
-	bits := 8
-	hashFn := sha256.New
-
 	cookieJar, _ := cookiejar.New(nil)
 	httpClient := &http.Client{
 		Jar: cookieJar,
 	}
-
+	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
+	if err != nil {
+		t.Errorf("NewConfiguration() error = %v", err)
+	}
 	clt := client.New(
 		httpClient,
-		client.NewConfiguration(baseURL, bits, hashFn),
+		cfg,
 		client.NewInMemoryUserRepository())
 
-	err := clt.Register("add-domain-username")
+	err = clt.Register("add-domain-username")
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
@@ -231,20 +234,20 @@ func TestITClient_Add(t *testing.T) {
 
 func TestITClient_Get(t *testing.T) {
 
-	bits := 8
-	hashFn := sha256.New
-
 	cookieJar, _ := cookiejar.New(nil)
 	httpClient := &http.Client{
 		Jar: cookieJar,
 	}
-
+	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
+	if err != nil {
+		t.Errorf("NewConfiguration() error = %v", err)
+	}
 	clt := client.New(
 		httpClient,
-		client.NewConfiguration(baseURL, bits, hashFn),
+		cfg,
 		client.NewInMemoryUserRepository())
 
-	err := clt.Register("get-domain-username")
+	err = clt.Register("get-domain-username")
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
@@ -281,6 +284,8 @@ func TestITClient_Get(t *testing.T) {
 		if !reflect.DeepEqual(pwda, pwdb) {
 			t.Errorf("pwda = %v pwdb = %v", pwda, pwdb)
 		}
+
+		clt.Logout()
 	})
 
 	t.Run("should get the same password from two different sessions", func(t *testing.T) {
@@ -308,9 +313,15 @@ func TestITClient_Get(t *testing.T) {
 		}
 
 		clt.Logout()
+
 		err = clt.Login("get-domain-username", "password")
 		if err != nil {
 			t.Errorf("Login() error = %v", err)
+		}
+
+		err = clt.Challenge()
+		if err != nil {
+			t.Errorf("Challenge() error = %v", err)
 		}
 
 		pwdb, err := clt.Get(domain)

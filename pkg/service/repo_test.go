@@ -10,7 +10,7 @@ func TestUserRepository_Add(t *testing.T) {
 
 	cID := big.NewInt(1)
 
-	t.Run("should add new user", func(t *testing.T) {
+	t.Run("should add new user and get the same", func(t *testing.T) {
 		// given
 		r := NewUserRepository()
 		wantUser := User{cID: cID}
@@ -30,7 +30,7 @@ func TestUserRepository_Add(t *testing.T) {
 		}
 	})
 
-	t.Run("should override existing user", func(t *testing.T) {
+	t.Run("should override existing user and get the new one", func(t *testing.T) {
 		oldUser := User{cID: cID, kv: big.NewInt(1)}
 		newUser := User{cID: cID, kv: big.NewInt(1)}
 		r := NewUserRepository()

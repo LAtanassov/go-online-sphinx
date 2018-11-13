@@ -8,21 +8,19 @@ import (
 	"testing"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
+	"github.com/go-kit/kit/log"
 )
 
 func TestMakeRegisterHandler(t *testing.T) {
-	s := New(NewUserRepository(), Configuration{
-		sID:  big.NewInt(1),
-		k:    big.NewInt(1),
-		q0:   big.NewInt(1),
-		bits: big.NewInt(1),
-		hash: sha256.New,
-	})
+	s := New(
+		NewUserRepository(),
+		NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+	)
 	ct := "application/json"
 
 	t.Run("should register a user", func(t *testing.T) {
 
-		ts := httptest.NewServer(MakeRegisterHandler(s))
+		ts := httptest.NewServer(NewHTTPTransport(s, log.NewNopLogger()).MakeRegisterHandler())
 		defer ts.Close()
 
 		r, err := contract.MarshalRegisterRequest(contract.RegisterRequest{CID: big.NewInt(1)})
@@ -39,18 +37,15 @@ func TestMakeRegisterHandler(t *testing.T) {
 }
 
 func TestMakeExpKHandler(t *testing.T) {
-	s := New(NewUserRepository(), Configuration{
-		sID:  big.NewInt(1),
-		k:    big.NewInt(1),
-		q0:   big.NewInt(1),
-		bits: big.NewInt(1),
-		hash: sha256.New,
-	})
+	s := New(
+		NewUserRepository(),
+		NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+	)
 	ct := "application/json"
 
 	t.Run("should exponent to k given blinded secret", func(t *testing.T) {
 
-		ts := httptest.NewServer(MakeExpKHandler(s))
+		ts := httptest.NewServer(NewHTTPTransport(s, log.NewNopLogger()).MakeExpKHandler())
 		defer ts.Close()
 
 		r, err := contract.MarshalExpKRequest(contract.ExpKRequest{
@@ -71,18 +66,15 @@ func TestMakeExpKHandler(t *testing.T) {
 }
 
 func TestMakeChallengeHandler(t *testing.T) {
-	s := New(NewUserRepository(), Configuration{
-		sID:  big.NewInt(1),
-		k:    big.NewInt(1),
-		q0:   big.NewInt(1),
-		bits: big.NewInt(1),
-		hash: sha256.New,
-	})
+	s := New(
+		NewUserRepository(),
+		NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+	)
 	ct := "application/json"
 
 	t.Run("should respond to a given challenge", func(t *testing.T) {
 
-		ts := httptest.NewServer(MakeChallengeHandler(s))
+		ts := httptest.NewServer(NewHTTPTransport(s, log.NewNopLogger()).MakeChallengeHandler())
 		defer ts.Close()
 
 		r, err := contract.MarshalChallengeRequest(contract.ChallengeRequest{
@@ -101,18 +93,15 @@ func TestMakeChallengeHandler(t *testing.T) {
 }
 
 func TestMakeMetadataHandler(t *testing.T) {
-	s := New(NewUserRepository(), Configuration{
-		sID:  big.NewInt(1),
-		k:    big.NewInt(1),
-		q0:   big.NewInt(1),
-		bits: big.NewInt(1),
-		hash: sha256.New,
-	})
+	s := New(
+		NewUserRepository(),
+		NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+	)
 	ct := "application/json"
 
 	t.Run("should return metadata", func(t *testing.T) {
 
-		ts := httptest.NewServer(MakeMetadataHandler(s))
+		ts := httptest.NewServer(NewHTTPTransport(s, log.NewNopLogger()).MakeMetadataHandler())
 		defer ts.Close()
 
 		r, err := contract.MarshalMetadataRequest(contract.MetadataRequest{
@@ -130,18 +119,15 @@ func TestMakeMetadataHandler(t *testing.T) {
 }
 
 func TestMakeAddHandler(t *testing.T) {
-	s := New(NewUserRepository(), Configuration{
-		sID:  big.NewInt(1),
-		k:    big.NewInt(1),
-		q0:   big.NewInt(1),
-		bits: big.NewInt(1),
-		hash: sha256.New,
-	})
+	s := New(
+		NewUserRepository(),
+		NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+	)
 	ct := "application/json"
 
 	t.Run("should add vault", func(t *testing.T) {
 
-		ts := httptest.NewServer(MakeAddHandler(s))
+		ts := httptest.NewServer(NewHTTPTransport(s, log.NewNopLogger()).MakeAddHandler())
 		defer ts.Close()
 
 		r, err := contract.MarshalAddRequest(contract.AddRequest{
@@ -160,18 +146,15 @@ func TestMakeAddHandler(t *testing.T) {
 }
 
 func TestMakeGetHandler(t *testing.T) {
-	s := New(NewUserRepository(), Configuration{
-		sID:  big.NewInt(1),
-		k:    big.NewInt(1),
-		q0:   big.NewInt(1),
-		bits: big.NewInt(1),
-		hash: sha256.New,
-	})
+	s := New(
+		NewUserRepository(),
+		NewConfiguration(big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(1), sha256.New),
+	)
 	ct := "application/json"
 
 	t.Run("should add vault", func(t *testing.T) {
 
-		ts := httptest.NewServer(MakeGetHandler(s))
+		ts := httptest.NewServer(NewHTTPTransport(s, log.NewNopLogger()).MakeGetHandler())
 		defer ts.Close()
 
 		r, err := contract.MarshalGetRequest(contract.GetRequest{

@@ -5,8 +5,6 @@ import (
 	"io"
 	"math/big"
 	"net/http"
-	"net/url"
-	"path"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/contract"
 	"github.com/pkg/errors"
@@ -67,12 +65,7 @@ func (clt *Client) Register(username string) error {
 		return errors.Wrap(err, "Register: failed to marshal RegisterRequest")
 	}
 
-	u, err := url.Parse(clt.config.baseURL)
-	if err != nil {
-		return errors.Wrap(err, "Register: failed to parse baseURL")
-	}
-	u.Path = path.Join(u.Path, clt.config.registerPath)
-	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
+	r, err := clt.poster.Post(clt.config.registerPath, clt.config.contentType, rd)
 	if err != nil {
 		return errors.Wrap(err, "Register: failed to post RegisterRequest")
 	}
@@ -128,12 +121,7 @@ func (clt *Client) Login(username, pwd string) error {
 		return errors.Wrap(err, "failed to marshal ExpKRequest")
 	}
 
-	u, err := url.Parse(clt.config.baseURL)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse baseURL")
-	}
-	u.Path = path.Join(u.Path, clt.config.expkPath)
-	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
+	r, err := clt.poster.Post(clt.config.expkPath, clt.config.contentType, rd)
 	if err != nil {
 		return errors.Wrap(err, "failed to post ExpKRequest")
 	}
@@ -178,12 +166,7 @@ func (clt *Client) Challenge() error {
 		return errors.Wrap(err, "failed to marshal ChallengeRequest")
 	}
 
-	u, err := url.Parse(clt.config.baseURL)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse baseURL")
-	}
-	u.Path = path.Join(u.Path, clt.config.challengePath)
-	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
+	r, err := clt.poster.Post(clt.config.challengePath, clt.config.contentType, rd)
 	if err != nil {
 		return errors.Wrap(err, "failed to post ChallengeRequest")
 	}
@@ -221,9 +204,7 @@ func (clt *Client) GetMetadata() ([]string, error) {
 		return nil, errors.Wrap(err, "failed to marshal MetadataRequest")
 	}
 
-	u, err := url.Parse(clt.config.baseURL)
-	u.Path = path.Join(u.Path, clt.config.metadataPath)
-	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
+	r, err := clt.poster.Post(clt.config.metadataPath, clt.config.contentType, rd)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to post MetadataRequest")
 	}
@@ -259,9 +240,7 @@ func (clt *Client) Add(domain string) error {
 		return errors.Wrap(err, "failed to marshal AddRequest")
 	}
 
-	u, err := url.Parse(clt.config.baseURL)
-	u.Path = path.Join(u.Path, clt.config.addPath)
-	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
+	r, err := clt.poster.Post(clt.config.addPath, clt.config.contentType, rd)
 	if err != nil {
 		return errors.Wrap(err, "failed to post AddRequest")
 	}
@@ -310,9 +289,7 @@ func (clt *Client) Get(domain string) (string, error) {
 		return "", errors.Wrap(err, "failed to marshal GetRequest")
 	}
 
-	u, err := url.Parse(clt.config.baseURL)
-	u.Path = path.Join(u.Path, clt.config.getPath)
-	r, err := clt.poster.Post(u.String(), clt.config.contentType, rd)
+	r, err := clt.poster.Post(clt.config.getPath, clt.config.contentType, rd)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to post GetRequest")
 	}
