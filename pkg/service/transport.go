@@ -63,7 +63,7 @@ func (h *HTTPTransport) MakeRegisterHandler() http.Handler {
 // MakeExpKHandler ...
 func (h *HTTPTransport) MakeExpKHandler() http.Handler {
 	return post("/v1/login/expk", func(resp http.ResponseWriter, req *http.Request) {
-		session, err := store.Get(req, "online-sphinx")
+		session, err := store.New(req, "online-sphinx")
 		if err != nil {
 			h.logger.Log("handler", "expk", "error", fmt.Sprintf("+%v", errors.Wrap(err, "session.Get() failed")))
 			contract.MarshalError(resp, err)
@@ -146,6 +146,23 @@ func (h *HTTPTransport) MakeChallengeHandler() http.Handler {
 			contract.MarshalError(resp, err)
 			return
 		}
+	})
+}
+
+// MakeLogoutHandler ...
+func (h *HTTPTransport) MakeLogoutHandler() http.Handler {
+	return post("/v1/logout", func(resp http.ResponseWriter, req *http.Request) {
+		session, err := store.Get(req, "online-sphinx")
+		if err != nil {
+			resp.WriteHeader(http.StatusOK)
+			return
+		}
+		defer req.Body.Close()
+
+		session.Options.MaxAge = -1
+		session.Save(req, resp)
+
+		resp.WriteHeader(http.StatusOK)
 	})
 }
 

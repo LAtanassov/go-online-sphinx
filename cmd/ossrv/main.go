@@ -106,6 +106,7 @@ func main() {
 	mux.Handle("/v1/register", t.MakeRegisterHandler())
 	mux.Handle("/v1/login/expk", t.MakeExpKHandler())
 	mux.Handle("/v1/login/challenge", t.MakeChallengeHandler())
+	mux.Handle("/v1/logout", t.MakeLogoutHandler())
 
 	mux.Handle("/v1/metadata", t.MakeMetadataHandler())
 	mux.Handle("/v1/add", t.MakeAddHandler())

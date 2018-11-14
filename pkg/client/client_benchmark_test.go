@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/big"
 	"net/http"
+	"net/http/cookiejar"
 	"testing"
 
 	"github.com/LAtanassov/go-online-sphinx/pkg/client"
@@ -14,6 +15,10 @@ import (
 
 func BenchmarkClient_Register_SHA256_32Bits(b *testing.B) {
 	benchmarkClient_Register(b, 32, sha256.New)
+}
+
+func BenchmarkClient_Register_SHA256_128Bits(b *testing.B) {
+	benchmarkClient_Register(b, 128, sha256.New)
 }
 
 func BenchmarkClient_Register_SHA256_512Bits(b *testing.B) {
@@ -38,7 +43,11 @@ func benchmarkClient_Register(b *testing.B, bits int, hash func() hash.Hash) {
 	if err != nil {
 		b.Errorf("NewConfiguration() error = %v", err)
 	}
-	clt := client.New(&http.Client{},
+	cookieJar, _ := cookiejar.New(nil)
+	httpClient := &http.Client{
+		Jar: cookieJar,
+	}
+	clt := client.New(httpClient,
 		cfg,
 		client.NewInMemoryUserRepository())
 
@@ -58,6 +67,9 @@ func benchmarkClient_Register(b *testing.B, bits int, hash func() hash.Hash) {
 
 func BenchmarkClient_Login_SHA256_32Bits(b *testing.B) {
 	benchmarkClient_Login(b, 32, sha256.New)
+}
+func BenchmarkClient_Login_SHA256_128Bits(b *testing.B) {
+	benchmarkClient_Login(b, 128, sha256.New)
 }
 
 func BenchmarkClient_Login_SHA256_512Bits(b *testing.B) {
@@ -83,7 +95,11 @@ func benchmarkClient_Login(b *testing.B, bits int, hash func() hash.Hash) {
 	if err != nil {
 		b.Errorf("NewConfiguration() error = %v", err)
 	}
-	clt := client.New(&http.Client{},
+	cookieJar, _ := cookiejar.New(nil)
+	httpClient := &http.Client{
+		Jar: cookieJar,
+	}
+	clt := client.New(httpClient,
 		cfg,
 		client.NewInMemoryUserRepository())
 
@@ -107,6 +123,7 @@ func benchmarkClient_Login(b *testing.B, bits int, hash func() hash.Hash) {
 		if err != nil {
 			b.Errorf("Challenge() error = %v", err)
 		}
+		clt.Logout()
 	}
 
 	b.StopTimer()
@@ -115,7 +132,9 @@ func benchmarkClient_Login(b *testing.B, bits int, hash func() hash.Hash) {
 func BenchmarkClient_Add_SHA256_32Bits(b *testing.B) {
 	benchmarkClient_Add(b, 32, sha256.New)
 }
-
+func BenchmarkClient_Add_SHA256_128Bits(b *testing.B) {
+	benchmarkClient_Add(b, 128, sha256.New)
+}
 func BenchmarkClient_Add_SHA256_512Bits(b *testing.B) {
 	benchmarkClient_Add(b, 512, sha256.New)
 }
@@ -139,7 +158,11 @@ func benchmarkClient_Add(b *testing.B, bits int, hash func() hash.Hash) {
 	if err != nil {
 		b.Errorf("NewConfiguration() error = %v", err)
 	}
-	clt := client.New(&http.Client{},
+	cookieJar, _ := cookiejar.New(nil)
+	httpClient := &http.Client{
+		Jar: cookieJar,
+	}
+	clt := client.New(httpClient,
 		cfg,
 		client.NewInMemoryUserRepository())
 
@@ -172,10 +195,84 @@ func benchmarkClient_Add(b *testing.B, bits int, hash func() hash.Hash) {
 	b.StopTimer()
 }
 
+func BenchmarkClient_GetMetadata_SHA256_32Bits(b *testing.B) {
+	benchmarkClient_GetMetadata(b, 32, sha256.New)
+}
+func BenchmarkClient_GetMetadata_SHA256_128Bits(b *testing.B) {
+	benchmarkClient_GetMetadata(b, 128, sha256.New)
+}
+func BenchmarkClient_GetMetadata_SHA256_512Bits(b *testing.B) {
+	benchmarkClient_GetMetadata(b, 512, sha256.New)
+}
+
+func BenchmarkClient_GetMetadata_SHA256_1024Bits(b *testing.B) {
+	benchmarkClient_GetMetadata(b, 1024, sha256.New)
+}
+
+func BenchmarkClient_GetMetadata_SHA256_2048Bits(b *testing.B) {
+	benchmarkClient_GetMetadata(b, 2048, sha256.New)
+}
+
+func BenchmarkClient_GetMetadata_SHA256_3072Bits(b *testing.B) {
+	benchmarkClient_GetMetadata(b, 3072, sha256.New)
+}
+
+var domains []string
+
+func benchmarkClient_GetMetadata(b *testing.B, bits int, hash func() hash.Hash) {
+
+	baseURL := "http://localhost:8080"
+	cfg, err := client.NewConfiguration(baseURL, bits, hash)
+	if err != nil {
+		b.Errorf("NewConfiguration() error = %v", err)
+	}
+	cookieJar, _ := cookiejar.New(nil)
+	httpClient := &http.Client{
+		Jar: cookieJar,
+	}
+	clt := client.New(httpClient,
+		cfg,
+		client.NewInMemoryUserRepository())
+
+	err = clt.Register("add-domain-user")
+	if err != nil {
+		b.Errorf("Register() error = %+v", err)
+	}
+
+	err = clt.Login("add-domain-user", "password")
+	if err != nil {
+		b.Errorf("Login() error = %+v", err)
+	}
+
+	err = clt.Challenge()
+	if err != nil {
+		b.Errorf("Challenge() error = %+v", err)
+	}
+
+	err = clt.Add("google.com")
+	if err != nil {
+		b.Errorf("Add() error = %v", err)
+	}
+
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		ds, err := clt.GetMetadata()
+		if err != nil {
+			b.Errorf("GetMetadata() error = %v", err)
+		}
+		domains = ds
+	}
+
+	b.StopTimer()
+}
+
 func BenchmarkClient_Get_SHA256_32Bits(b *testing.B) {
 	benchmarkClient_Get(b, 32, sha256.New)
 }
-
+func BenchmarkClient_Get_SHA256_128Bits(b *testing.B) {
+	benchmarkClient_Get(b, 128, sha256.New)
+}
 func BenchmarkClient_Get_SHA256_512Bits(b *testing.B) {
 	benchmarkClient_Get(b, 512, sha256.New)
 }
@@ -201,7 +298,11 @@ func benchmarkClient_Get(b *testing.B, bits int, hash func() hash.Hash) {
 	if err != nil {
 		b.Errorf("NewConfiguration() error = %v", err)
 	}
-	clt := client.New(&http.Client{},
+	cookieJar, _ := cookiejar.New(nil)
+	httpClient := &http.Client{
+		Jar: cookieJar,
+	}
+	clt := client.New(httpClient,
 		cfg,
 		client.NewInMemoryUserRepository())
 

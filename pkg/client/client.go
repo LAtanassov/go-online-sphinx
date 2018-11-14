@@ -69,6 +69,7 @@ func (clt *Client) Register(username string) error {
 	if err != nil {
 		return errors.Wrap(err, "Register: failed to post RegisterRequest")
 	}
+	defer r.Body.Close()
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
@@ -125,6 +126,7 @@ func (clt *Client) Login(username, pwd string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to post ExpKRequest")
 	}
+	defer r.Body.Close()
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
@@ -135,7 +137,6 @@ func (clt *Client) Login(username, pwd string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to unmarshal ExpKResponse")
 	}
-	defer r.Body.Close()
 
 	B0 := crypto.ExpInGroup(expKResp.BD, kinv, user.q)
 
@@ -170,6 +171,7 @@ func (clt *Client) Challenge() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to post ChallengeRequest")
 	}
+	defer r.Body.Close()
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
@@ -180,7 +182,6 @@ func (clt *Client) Challenge() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to unmarshal ChallengeResponse")
 	}
-	defer r.Body.Close()
 
 	verifier := crypto.ExpInGroup(g, clt.session.ski, clt.session.user.q)
 	if response.R.Cmp(verifier) != 0 {
@@ -208,6 +209,7 @@ func (clt *Client) GetMetadata() ([]string, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to post MetadataRequest")
 	}
+	defer r.Body.Close()
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
@@ -218,7 +220,6 @@ func (clt *Client) GetMetadata() ([]string, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal MetadataResponse")
 	}
-	defer r.Body.Close()
 	return metaResp.Domains, nil
 
 }
@@ -244,6 +245,7 @@ func (clt *Client) Add(domain string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to post AddRequest")
 	}
+	defer r.Body.Close()
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
@@ -293,6 +295,7 @@ func (clt *Client) Get(domain string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to post GetRequest")
 	}
+	defer r.Body.Close()
 
 	err = contract.UnmarshalIfError(r)
 	if err != nil {
@@ -303,7 +306,6 @@ func (clt *Client) Get(domain string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to unmarshal GetResponse")
 	}
-	defer r.Body.Close()
 
 	B0 := crypto.ExpInGroup(getResp.Bj, kinv, clt.session.user.q)
 
@@ -314,6 +316,13 @@ func (clt *Client) Get(domain string) (string, error) {
 }
 
 // Logout ...
-func (clt *Client) Logout() {
+func (clt *Client) Logout() error {
+	r, err := clt.poster.Post(clt.config.logoutPath, clt.config.contentType, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to post LogoutRequest")
+	}
+	defer r.Body.Close()
+
 	clt.session = nil
+	return nil
 }

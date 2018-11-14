@@ -17,6 +17,7 @@ type Configuration struct {
 	metadataPath  string
 	addPath       string
 	getPath       string
+	logoutPath    string
 }
 
 // NewConfiguration return default configuration.
@@ -49,6 +50,9 @@ func NewConfiguration(baseURL string, bits int, hashFn func() hash.Hash) (Config
 
 	u.Path = "/v1/get"
 	c.getPath = u.String()
+
+	u.Path = "/v1/logout"
+	c.logoutPath = u.String()
 
 	return c, nil
 }
