@@ -27,18 +27,20 @@ import (
 // Configuration represents a set of environment variables loaded at startup e.g.:
 // #!/bin/sh
 // export OSSRV_ADDR=8080
+// export OSSRV_TIMEOUTSEC=15
 // export OSSRV_KEYLENGTH=1024
 // export OSSRV_HASH=sha256
 // export OSSRV_IDHEX=1A3F1
 // export OSSRV_KHEX=AFFEE
 // export OSSRV_QHEX=BEEFF
 type Configuration struct {
-	Addr      string `default:":8080"`
-	KeyLength int    `default:"1024"`
-	Hash      string `default:"sha256"`
-	IDHex     string
-	KHex      string
-	Q0Hex     string
+	Addr       string `default:":8080"`
+	TimeoutSec int    `default:"15"`
+	KeyLength  int    `default:"1024"`
+	Hash       string `default:"sha256"`
+	IDHex      string
+	KHex       string
+	Q0Hex      string
 }
 
 func main() {
@@ -59,6 +61,7 @@ func main() {
 	}
 
 	httpAddr := flag.String("ossrv.addr", c.Addr, "http listen address")
+	timeoutSec := flag.Int("ossrv.timeout.sec", c.TimeoutSec, "http timeout in seconds")
 	keyLength := flag.Int("ossrv.key.length", c.KeyLength, "key length")
 	hashName := flag.String("ossrv.hash", c.Hash, "hash function")
 	idhex := flag.String("ossrv.id.hex", c.IDHex, "secret k in hex")
@@ -124,8 +127,8 @@ func main() {
 	server := &http.Server{
 		Addr:         *httpAddr,
 		Handler:      handler,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  time.Duration(*timeoutSec) * time.Second,
+		WriteTimeout: time.Duration(*timeoutSec) * time.Second,
 	}
 	go func(server *http.Server) {
 		logger.Log("service", "started", "listening", httpAddr)
