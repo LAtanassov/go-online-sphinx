@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"net/http/cookiejar"
 	"os"
 	"time"
 
@@ -34,9 +35,14 @@ func newCommand() *cobra.Command {
 		IdleConnTimeout: 30 * time.Second,
 	}
 
+	cookieJar, _ := cookiejar.New(nil)
+
 	c := cli{
 		client.New(
-			&http.Client{Transport: tr},
+			&http.Client{
+				Jar:       cookieJar,
+				Transport: tr,
+			},
 			getConfiguration(),
 			client.NewSQLiteUserRepository("~/.oscli.sqli.db"),
 		),
@@ -50,36 +56,42 @@ func newCommand() *cobra.Command {
 
 	var registerCmd = &cobra.Command{
 		Use:   "register <username>",
-		Short: "Registers to Online SPHINX",
-		Long:  `Registers to Online SPHINX using your username.`,
+		Short: "Registers a new user to Online SPHINX",
+		Long:  `Registers a New User to Online SPHINX`,
 		Run:   c.registerRun,
 	}
 
 	var loginCmd = &cobra.Command{
 		Use:   "login <username> <password>",
-		Short: "Login",
-		Long: `
-			Login to Online SPHINX using your username and password. 
-			TODO: passwords should not be handled in CLI like that.`,
-		Run: c.loginRun,
+		Short: "Login with an existing user to Online SPHINX",
+		Long:  `Login with an existing user to Online SPHINX. WARNING: Shoulder Surfing, Bash History !!! SHOULD BE IMPROVED !!!`,
+		Run:   c.loginRun,
+	}
+
+	var logoutCmd = &cobra.Command{
+		Use:   "logout",
+		Short: "Logout deletes the associated session cookie",
+		Long:  "Logout deletes the associated session cookie",
+		Run:   c.logoutRun,
 	}
 
 	var addCmd = &cobra.Command{
 		Use:   "add <domain>",
-		Short: "Add new Domain",
-		Long:  `Add new Domain`,
+		Short: "Add a new domain to Online SPHINX",
+		Long:  `Add a new domain to Online SPHINX`,
 		Run:   c.addRun,
 	}
 
 	var getCmd = &cobra.Command{
 		Use:   "get <domain>",
-		Short: "Get Password of Domain",
-		Long:  `Get Password of Domain`,
+		Short: "Get the password of specific domain from Online SPHINX",
+		Long:  `Get the password of specific domain from Online SPHINX`,
 		Run:   c.getRun,
 	}
 
 	rootCmd.AddCommand(registerCmd)
 	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(logoutCmd)
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(getCmd)
 
@@ -184,4 +196,12 @@ func (c *cli) getRun(cmd *cobra.Command, args []string) {
 		os.Exit(-1)
 	}
 	fmt.Println(pwd)
+}
+
+func (c *cli) logoutRun(cmd *cobra.Command, args []string) {
+	err := c.clt.Logout()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
 }
