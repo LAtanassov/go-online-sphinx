@@ -26,15 +26,21 @@ import (
 
 // Configuration represents a set of environment variables loaded at startup e.g.:
 // #!/bin/sh
-// export OSSRV_ADDR=8080
+// export OSSRV_ADDR=443
+// export OSSRV_KEYPATH=server.key
+// export OSSRV_CERTPATH=server.crt
 // export OSSRV_TIMEOUTSEC=15
 // export OSSRV_KEYLENGTH=1024
 // export OSSRV_HASH=sha256
 // export OSSRV_IDHEX=1A3F1
 // export OSSRV_KHEX=AFFEE
 // export OSSRV_QHEX=BEEFF
+// export OSSRV_KHEX=AFFEE
 type Configuration struct {
-	Addr       string `default:":8080"`
+	Addr     string `default:":443"`
+	KeyPath  string `default:"server.key"`
+	CertPath string `default:"server.crt"`
+
 	TimeoutSec int    `default:"15"`
 	KeyLength  int    `default:"1024"`
 	Hash       string `default:"sha256"`
@@ -61,6 +67,8 @@ func main() {
 	}
 
 	httpAddr := flag.String("ossrv.addr", c.Addr, "http listen address")
+	keyPath := flag.String("ossrv.key.path", c.KeyPath, "server key path")
+	certPath := flag.String("ossrv.cert.path", c.CertPath, "server cert path")
 	timeoutSec := flag.Int("ossrv.timeout.sec", c.TimeoutSec, "http timeout in seconds")
 	keyLength := flag.Int("ossrv.key.length", c.KeyLength, "key length")
 	hashName := flag.String("ossrv.hash", c.Hash, "hash function")
@@ -132,7 +140,7 @@ func main() {
 	}
 	go func(server *http.Server) {
 		logger.Log("service", "started", "listening", httpAddr)
-		err := server.ListenAndServe()
+		err := server.ListenAndServeTLS(*certPath, *keyPath)
 		if err != nil {
 			logger.Log("err", fmt.Sprintf("%+v", errors.Wrap(err, "failed to start http service")))
 			os.Exit(1)

@@ -5,8 +5,10 @@
 *.so
 *.dylib
 
-osctl
+oscli
 ossrv
+certs/*.key
+certs/*.crt
 
 # Test binary, build with `go test -c`
 *.test
