@@ -6,7 +6,7 @@
 *.dylib
 
 oscli
-ossrv
+ossvc
 certs/*.key
 certs/*.crt
 

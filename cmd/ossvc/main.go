@@ -26,16 +26,16 @@ import (
 
 // Configuration represents a set of environment variables loaded at startup e.g.:
 // #!/bin/sh
-// export OSSRV_ADDR=443
-// export OSSRV_KEYPATH=server.key
-// export OSSRV_CERTPATH=server.crt
-// export OSSRV_TIMEOUTSEC=15
-// export OSSRV_KEYLENGTH=1024
-// export OSSRV_HASH=sha256
-// export OSSRV_IDHEX=1A3F1
-// export OSSRV_KHEX=AFFEE
-// export OSSRV_QHEX=BEEFF
-// export OSSRV_KHEX=AFFEE
+// export OSSVC_ADDR=443
+// export OSSVC_KEYPATH=server.key
+// export OSSVC_CERTPATH=server.crt
+// export OSSVC_TIMEOUTSEC=15
+// export OSSVC_KEYLENGTH=1024
+// export OSSVC_HASH=sha256
+// export OSSVC_IDHEX=1A3F1
+// export OSSVC_KHEX=AFFEE
+// export OSSVC_QHEX=BEEFF
+// export OSSVC_KHEX=AFFEE
 type Configuration struct {
 	Addr     string `default:":443"`
 	KeyPath  string `default:"server.key"`
@@ -58,21 +58,21 @@ func main() {
 	// === configuration ===
 
 	var c Configuration
-	err := envconfig.Process("ossrv", &c)
+	err := envconfig.Process("ossvc", &c)
 	if err != nil {
 		logger.Log("err", fmt.Sprintf("%+v", errors.Wrap(err, "failed to process environment variables")))
 		os.Exit(1)
 	}
 
-	httpAddr := flag.String("ossrv.addr", c.Addr, "http listen address")
-	keyPath := flag.String("ossrv.key.path", c.KeyPath, "server key path")
-	certPath := flag.String("ossrv.cert.path", c.CertPath, "server cert path")
-	timeoutSec := flag.Int("ossrv.timeout.sec", c.TimeoutSec, "http timeout in seconds")
-	keyLength := flag.Int("ossrv.key.length", c.KeyLength, "key length")
-	hashName := flag.String("ossrv.hash", c.Hash, "hash function")
-	idhex := flag.String("ossrv.id.hex", c.IDHex, "secret k in hex")
-	khex := flag.String("ossrv.k.hex", c.KHex, "secret k in hex")
-	q0hex := flag.String("ossrv.q0.hex", c.Q0Hex, "secret Q0 in hex")
+	httpAddr := flag.String("ossvc.addr", c.Addr, "http listen address")
+	keyPath := flag.String("ossvc.key.path", c.KeyPath, "server key path")
+	certPath := flag.String("ossvc.cert.path", c.CertPath, "server cert path")
+	timeoutSec := flag.Int("ossvc.timeout.sec", c.TimeoutSec, "http timeout in seconds")
+	keyLength := flag.Int("ossvc.key.length", c.KeyLength, "key length")
+	hashName := flag.String("ossvc.hash", c.Hash, "hash function")
+	idhex := flag.String("ossvc.id.hex", c.IDHex, "secret k in hex")
+	khex := flag.String("ossvc.k.hex", c.KHex, "secret k in hex")
+	q0hex := flag.String("ossvc.q0.hex", c.Q0Hex, "secret Q0 in hex")
 	flag.Parse()
 
 	hashFn := getHashBy(*hashName)

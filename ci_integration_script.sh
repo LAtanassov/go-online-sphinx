@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CONTAINER_ID=$(docker run -d -p 8080:8080 -e OSSRV_KEYLENGTH=8 latanassov/ossrv:0.1.0)
+CONTAINER_ID=$(docker run -d -p 8080:8080 -e OSSVC_KEYLENGTH=8 latanassov/ossvc:0.1.0)
 
 mkdir -p report
 

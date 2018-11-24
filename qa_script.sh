@@ -7,4 +7,4 @@ go tool cover -html=./report/coverage_ut.out -o ./report/coverage_ut.html
 
 # allocation
 go build -gcflags "-m -m" ./cmd/osctl/... 2>&1 | tee ./report/allocation_osctl_ut.txt
-go build -gcflags "-m -m" ./cmd/ossrv/... 2>&1 | tee ./report/allocation_ossrv_ut.txt
+go build -gcflags "-m -m" ./cmd/ossvc/... 2>&1 | tee ./report/allocation_ossvc_ut.txt
