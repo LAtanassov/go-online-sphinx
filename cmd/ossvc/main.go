@@ -27,8 +27,8 @@ import (
 // Configuration represents a set of environment variables loaded at startup e.g.:
 // #!/bin/sh
 // export OSSVC_ADDR=443
-// export OSSVC_KEYPATH=server.key
-// export OSSVC_CERTPATH=server.crt
+// export OSSVC_KEYPATH=./certs/server.key
+// export OSSVC_CERTPATH=./certs/server.crt
 // export OSSVC_TIMEOUTSEC=15
 // export OSSVC_KEYLENGTH=1024
 // export OSSVC_HASH=sha256
@@ -38,8 +38,8 @@ import (
 // export OSSVC_KHEX=AFFEE
 type Configuration struct {
 	Addr     string `default:":443"`
-	KeyPath  string `default:"server.key"`
-	CertPath string `default:"server.crt"`
+	KeyPath  string `default:"./certs/server.key"`
+	CertPath string `default:"./certs/server.crt"`
 
 	TimeoutSec int    `default:"15"`
 	KeyLength  int    `default:"1024"`

@@ -4,6 +4,7 @@ package client_test
 
 import (
 	"crypto/sha256"
+	"crypto/tls"
 	"net/http"
 	"net/http/cookiejar"
 	"reflect"
@@ -12,22 +13,44 @@ import (
 	"github.com/LAtanassov/go-online-sphinx/pkg/client"
 )
 
-var baseURL = "http://localhost:8080"
-var bits = 8
-var hashFn = sha256.New
+func newoscli() (*client.Client, error) {
+	var baseURL = "https://localhost"
+	var bits = 8
+	var hashFn = sha256.New
 
+	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
+	if err != nil {
+		return nil, err
+	}
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	cli := &http.Client{
+		Jar: jar,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	repo := client.NewInMemoryUserRepository()
+	return client.New(
+		cli,
+		cfg,
+		repo,
+	), nil
+}
 func TestITClient_Register(t *testing.T) {
+	clt, err := newoscli()
+	if err != nil {
+		t.Errorf("creating oscli() error = %v", err)
+	}
 
 	t.Run("should register a new user ID", func(t *testing.T) {
-
-		cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
-		if err != nil {
-			t.Errorf("NewConfiguration() error = %v", err)
-		}
-		clt := client.New(
-			&http.Client{},
-			cfg,
-			client.NewInMemoryUserRepository())
 
 		err = clt.Register("registered-user")
 		if err != nil {
@@ -36,14 +59,6 @@ func TestITClient_Register(t *testing.T) {
 	})
 
 	t.Run("should not be able to register with an existing user ID", func(t *testing.T) {
-		cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
-		if err != nil {
-			t.Errorf("NewConfiguration() error = %v", err)
-		}
-		clt := client.New(
-			&http.Client{},
-			cfg,
-			client.NewInMemoryUserRepository())
 
 		err = clt.Register("double-registered-user")
 		if err != nil {
@@ -60,22 +75,10 @@ func TestITClient_Register(t *testing.T) {
 
 func TestITClient_Login(t *testing.T) {
 
-	cookieJar, err := cookiejar.New(nil)
+	clt, err := newoscli()
 	if err != nil {
-		t.Errorf("cookiejar.New() error = %v", err)
+		t.Errorf("creating oscli() error = %v", err)
 	}
-	httpClient := &http.Client{
-		Jar: cookieJar,
-	}
-
-	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
-	if err != nil {
-		t.Errorf("NewConfiguration() error = %v", err)
-	}
-	clt := client.New(
-		httpClient,
-		cfg,
-		client.NewInMemoryUserRepository())
 
 	err = clt.Register("login-username")
 	if err != nil {
@@ -109,22 +112,10 @@ func TestITClient_Login(t *testing.T) {
 
 func TestITClient_GetMetadata(t *testing.T) {
 
-	cookieJar, err := cookiejar.New(nil)
+	clt, err := newoscli()
 	if err != nil {
-		t.Errorf("cookiejar.New() error = %v", err)
+		t.Errorf("creating oscli() error = %v", err)
 	}
-
-	httpClient := &http.Client{
-		Jar: cookieJar,
-	}
-	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
-	if err != nil {
-		t.Errorf("NewConfiguration() error = %v", err)
-	}
-	clt := client.New(
-		httpClient,
-		cfg,
-		client.NewInMemoryUserRepository())
 
 	err = clt.Register("get-metadata-username")
 	if err != nil {
@@ -184,18 +175,10 @@ func TestITClient_GetMetadata(t *testing.T) {
 
 func TestITClient_Add(t *testing.T) {
 
-	cookieJar, _ := cookiejar.New(nil)
-	httpClient := &http.Client{
-		Jar: cookieJar,
-	}
-	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
+	clt, err := newoscli()
 	if err != nil {
-		t.Errorf("NewConfiguration() error = %v", err)
+		t.Errorf("creating oscli() error = %v", err)
 	}
-	clt := client.New(
-		httpClient,
-		cfg,
-		client.NewInMemoryUserRepository())
 
 	err = clt.Register("add-domain-username")
 	if err != nil {
@@ -234,18 +217,10 @@ func TestITClient_Add(t *testing.T) {
 
 func TestITClient_Get(t *testing.T) {
 
-	cookieJar, _ := cookiejar.New(nil)
-	httpClient := &http.Client{
-		Jar: cookieJar,
-	}
-	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
+	clt, err := newoscli()
 	if err != nil {
-		t.Errorf("NewConfiguration() error = %v", err)
+		t.Errorf("creating oscli() error = %v", err)
 	}
-	clt := client.New(
-		httpClient,
-		cfg,
-		client.NewInMemoryUserRepository())
 
 	err = clt.Register("get-domain-username")
 	if err != nil {
