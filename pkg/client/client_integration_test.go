@@ -5,6 +5,7 @@ package client_test
 import (
 	"crypto/sha256"
 	"crypto/tls"
+	"hash"
 	"net/http"
 	"net/http/cookiejar"
 	"reflect"
@@ -13,39 +14,8 @@ import (
 	"github.com/LAtanassov/go-online-sphinx/pkg/client"
 )
 
-func newoscli() (*client.Client, error) {
-	var baseURL = "https://localhost"
-	var bits = 8
-	var hashFn = sha256.New
-
-	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
-	if err != nil {
-		return nil, err
-	}
-
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		return nil, err
-	}
-
-	cli := &http.Client{
-		Jar: jar,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	repo := client.NewInMemoryUserRepository()
-	return client.New(
-		cli,
-		cfg,
-		repo,
-	), nil
-}
 func TestITClient_Register(t *testing.T) {
-	clt, err := newoscli()
+	clt, err := newIntOscli(8, sha256.New)
 	if err != nil {
 		t.Errorf("creating oscli() error = %v", err)
 	}
@@ -75,7 +45,7 @@ func TestITClient_Register(t *testing.T) {
 
 func TestITClient_Login(t *testing.T) {
 
-	clt, err := newoscli()
+	clt, err := newIntOscli(8, sha256.New)
 	if err != nil {
 		t.Errorf("creating oscli() error = %v", err)
 	}
@@ -112,7 +82,7 @@ func TestITClient_Login(t *testing.T) {
 
 func TestITClient_GetMetadata(t *testing.T) {
 
-	clt, err := newoscli()
+	clt, err := newIntOscli(8, sha256.New)
 	if err != nil {
 		t.Errorf("creating oscli() error = %v", err)
 	}
@@ -175,7 +145,7 @@ func TestITClient_GetMetadata(t *testing.T) {
 
 func TestITClient_Add(t *testing.T) {
 
-	clt, err := newoscli()
+	clt, err := newIntOscli(8, sha256.New)
 	if err != nil {
 		t.Errorf("creating oscli() error = %v", err)
 	}
@@ -217,7 +187,7 @@ func TestITClient_Add(t *testing.T) {
 
 func TestITClient_Get(t *testing.T) {
 
-	clt, err := newoscli()
+	clt, err := newIntOscli(8, sha256.New)
 	if err != nil {
 		t.Errorf("creating oscli() error = %v", err)
 	}
@@ -308,4 +278,34 @@ func TestITClient_Get(t *testing.T) {
 			t.Errorf("pwda = %v pwdb = %v", pwda, pwdb)
 		}
 	})
+}
+
+func newIntOscli(bits int, hashFn func() hash.Hash) (*client.Client, error) {
+	var baseURL = "https://localhost"
+
+	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
+	if err != nil {
+		return nil, err
+	}
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	cli := &http.Client{
+		Jar: jar,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	repo := client.NewInMemoryUserRepository()
+	return client.New(
+		cli,
+		cfg,
+		repo,
+	), nil
 }
