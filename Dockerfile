@@ -1,5 +1,6 @@
 FROM scratch
 LABEL maintainer="latschesar.atanassov@gmx.at"
-ADD ossrv ossrv
+
+ADD ossvc ossvc
 EXPOSE 8080
-ENTRYPOINT ["/ossrv"]
+ENTRYPOINT ["/ossvc"]

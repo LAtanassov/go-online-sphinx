@@ -3,6 +3,7 @@ package client_test
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/tls"
 	"hash"
 	"math"
 	"math/big"
@@ -36,20 +37,12 @@ func BenchmarkClient_Register_SHA256_3072Bits(b *testing.B) {
 	benchmarkClient_Register(b, 3072, sha256.New)
 }
 
-func benchmarkClient_Register(b *testing.B, bits int, hash func() hash.Hash) {
+func benchmarkClient_Register(b *testing.B, bits int, hashfn func() hash.Hash) {
 
-	baseURL := "http://localhost:8080"
-	cfg, err := client.NewConfiguration(baseURL, bits, hash)
+	clt, err := newBenchOscli(bits, hashfn)
 	if err != nil {
-		b.Errorf("NewConfiguration() error = %v", err)
+		b.Errorf("creating oscli() error = %v", err)
 	}
-	cookieJar, _ := cookiejar.New(nil)
-	httpClient := &http.Client{
-		Jar: cookieJar,
-	}
-	clt := client.New(httpClient,
-		cfg,
-		client.NewInMemoryUserRepository())
 
 	users := generator(b, b.N)
 
@@ -88,20 +81,12 @@ func BenchmarkClient_Login_SHA256_3072Bits(b *testing.B) {
 	benchmarkClient_Login(b, 3072, sha256.New)
 }
 
-func benchmarkClient_Login(b *testing.B, bits int, hash func() hash.Hash) {
+func benchmarkClient_Login(b *testing.B, bits int, hashfn func() hash.Hash) {
 
-	baseURL := "http://localhost:8080"
-	cfg, err := client.NewConfiguration(baseURL, bits, hash)
+	clt, err := newBenchOscli(bits, hashfn)
 	if err != nil {
-		b.Errorf("NewConfiguration() error = %v", err)
+		b.Errorf("creating oscli() error = %v", err)
 	}
-	cookieJar, _ := cookiejar.New(nil)
-	httpClient := &http.Client{
-		Jar: cookieJar,
-	}
-	clt := client.New(httpClient,
-		cfg,
-		client.NewInMemoryUserRepository())
 
 	users := generator(b, b.N)
 
@@ -151,20 +136,12 @@ func BenchmarkClient_Add_SHA256_3072Bits(b *testing.B) {
 	benchmarkClient_Add(b, 3072, sha256.New)
 }
 
-func benchmarkClient_Add(b *testing.B, bits int, hash func() hash.Hash) {
+func benchmarkClient_Add(b *testing.B, bits int, hashfn func() hash.Hash) {
 
-	baseURL := "http://localhost:8080"
-	cfg, err := client.NewConfiguration(baseURL, bits, hash)
+	clt, err := newBenchOscli(bits, hashfn)
 	if err != nil {
-		b.Errorf("NewConfiguration() error = %v", err)
+		b.Errorf("creating oscli() error = %v", err)
 	}
-	cookieJar, _ := cookiejar.New(nil)
-	httpClient := &http.Client{
-		Jar: cookieJar,
-	}
-	clt := client.New(httpClient,
-		cfg,
-		client.NewInMemoryUserRepository())
 
 	err = clt.Register("add-domain-user")
 	if err != nil {
@@ -219,20 +196,12 @@ func BenchmarkClient_GetMetadata_SHA256_3072Bits(b *testing.B) {
 
 var domains []string
 
-func benchmarkClient_GetMetadata(b *testing.B, bits int, hash func() hash.Hash) {
+func benchmarkClient_GetMetadata(b *testing.B, bits int, hashfn func() hash.Hash) {
 
-	baseURL := "http://localhost:8080"
-	cfg, err := client.NewConfiguration(baseURL, bits, hash)
+	clt, err := newBenchOscli(bits, hashfn)
 	if err != nil {
-		b.Errorf("NewConfiguration() error = %v", err)
+		b.Errorf("creating oscli() error = %v", err)
 	}
-	cookieJar, _ := cookiejar.New(nil)
-	httpClient := &http.Client{
-		Jar: cookieJar,
-	}
-	clt := client.New(httpClient,
-		cfg,
-		client.NewInMemoryUserRepository())
 
 	err = clt.Register("add-domain-user")
 	if err != nil {
@@ -291,20 +260,12 @@ func BenchmarkClient_Get_SHA256_3072Bits(b *testing.B) {
 
 var pwd string
 
-func benchmarkClient_Get(b *testing.B, bits int, hash func() hash.Hash) {
+func benchmarkClient_Get(b *testing.B, bits int, hashfn func() hash.Hash) {
 
-	baseURL := "http://localhost:8080"
-	cfg, err := client.NewConfiguration(baseURL, bits, hash)
+	clt, err := newBenchOscli(bits, hashfn)
 	if err != nil {
-		b.Errorf("NewConfiguration() error = %v", err)
+		b.Errorf("creating oscli() error = %v", err)
 	}
-	cookieJar, _ := cookiejar.New(nil)
-	httpClient := &http.Client{
-		Jar: cookieJar,
-	}
-	clt := client.New(httpClient,
-		cfg,
-		client.NewInMemoryUserRepository())
 
 	err = clt.Register("get-domain-user")
 	if err != nil {
@@ -337,6 +298,36 @@ func benchmarkClient_Get(b *testing.B, bits int, hash func() hash.Hash) {
 	}
 
 	b.StopTimer()
+}
+
+func newBenchOscli(bits int, hashFn func() hash.Hash) (*client.Client, error) {
+	var baseURL = "https://localhost"
+
+	cfg, err := client.NewConfiguration(baseURL, bits, hashFn)
+	if err != nil {
+		return nil, err
+	}
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	cli := &http.Client{
+		Jar: jar,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	repo := client.NewInMemoryUserRepository()
+	return client.New(
+		cli,
+		cfg,
+		repo,
+	), nil
 }
 
 func generator(b *testing.B, x int) []string {
