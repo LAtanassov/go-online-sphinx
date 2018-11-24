@@ -1,2 +1,2 @@
-// Package client implements an Online SPHINX client mainly used by osctl
+// Package client implements an Online SPHINX client mainly used by oscli
 package client
