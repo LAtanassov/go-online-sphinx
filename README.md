@@ -17,7 +17,7 @@ THIS IS A PROTOTYPE to evaluate the Online SPHINX protocol
 
 >./cd_script.sh               # run unit tests & build & docker build and push -> openshift
 
->./.qa_script.sh              # generates code coverage report, memory allocation
+>./qa_script.sh              # generates code coverage report, memory allocation
 ```
 
 # Design Descision History
@@ -30,9 +30,18 @@ Another design decision made early on, because it is standard was to use REST+JS
 
 # Online SPHINX Protocol
 
-will be explained in details at some point.
+Functionality is split into several cryptographic protocols over HTTP/TLS
+* Ford-Kaliski Password to Random
+* ElGamal
 
-## tech. note:
+# Refactoring Suggestions
+
+* group modules by "what it does" not "what it is"
+* upgrade to protobuf with HTTP2
+* use istio and get rit of instrumentation layer in service
+* helm deployment to k8, openshift
+
+# Tech. Questions:
 
 - session via cookie over HTTPS needed - stateful protocol.
 - if cookie - do we need HMAC of requests anymore ?
