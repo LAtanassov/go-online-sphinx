@@ -17,7 +17,7 @@ THIS IS A PROTOTYPE to evaluate the Online SPHINX protocol
 
 >./cd_script.sh               # run unit tests & build & docker build and push -> openshift
 
->./qa_script.sh              # generates code coverage report, memory allocation
+>./qa_script.sh               # generates code coverage report, memory allocation
 ```
 
 # Design Descision History
