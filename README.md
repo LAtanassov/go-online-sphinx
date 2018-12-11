@@ -8,13 +8,16 @@ THIS IS A PROTOTYPE to evaluate the Online SPHINX protocol
 [![GoDoc](https://godoc.org/github.com/LAtanassov/go-online-sphinx?status.svg)](https://godoc.org/github.com/LAtanassov/go-online-sphinx)
 [![Coverage Status](https://coveralls.io/repos/github/LAtanassov/go-online-sphinx/badge.svg?branch=master)](https://coveralls.io/github/LAtanassov/go-online-sphinx?branch=master)
 
-# CI/CD
+# CI/CD/QA
 ```sh
 >./ci_script.sh               # run unit tests & build 
 >./ci_integration_script.sh   # run integration tests, assumes docker
 >./ci_benchmark_script.sh     # run benchmark tests, assumes docker
 >./ci_pprof_script.sh         # run benchmark tests with pprof, assumes docker
+
 >./cd_script.sh               # run unit tests & build & docker build and push -> openshift
+
+>./.qa_script.sh              # generates code coverage report, memory allocation
 ```
 
 # Design Descision History
