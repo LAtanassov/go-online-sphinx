@@ -1,6 +1,7 @@
 # go-online-sphinx
 
-Online SPHINX - inspired by [SPHINX](https://ieeexplore.ieee.org/document/7980050)   
+Master Thesis can be downloaded [Online SPHINX](http://pub.fh-campuswien.ac.at/obvfcwhsacc/content/titleinfo/3431934?lang=en)
+Online SPHINX inspired by [SPHINX](https://ieeexplore.ieee.org/document/7980050)   
 DO NOT USE FOR PASSWORD MANAGEMENT  
 THIS IS A PROTOTYPE to evaluate the Online SPHINX protocol
 
