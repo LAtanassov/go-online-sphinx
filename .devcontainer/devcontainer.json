@@ -1,0 +1,31 @@
+{
+	"name": "go-eventsourcing",
+	"dockerFile": "Dockerfile",
+
+	// Specifies a list of ports the container should publish
+	"appPort": [8080],
+
+	"runArgs": [
+		"-u", "root",
+        "-v","/var/run/docker.sock:/var/run/docker.sock",
+		"--mount", "type=bind,source=${env:HOME}${env:USERPROFILE}/.ssh,target=/root/.ssh-localhost",
+		"-e", "SYNC_LOCALHOST_SSH=true",
+		"--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined"
+	],
+
+	// Use 'settings' to set *default* container specific settings.json values on container create. 
+	// You can edit these settings after create using File > Preferences > Settings > Remote.
+	"settings": { 
+		"terminal.integrated.shell.linux": "/bin/bash",
+		"go.gopath": "/go",
+		"go.inferGopath": true,
+		"go.useLanguageServer": true
+	},
+
+	"postCreateCommand": "go version",
+
+	"extensions": [
+        "ms-vscode.go",
+		"ms-azuretools.vscode-docker"
+	]
+}
